@@ -1,8 +1,9 @@
 // src/components/notes/notes_page.tsx
 'use client';
 
+import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import ExcalidrawCanvas from '../ExcalidrawCanvas';
+import ExcalidrawCanvas from '@/components/ExcalidrawCanvas';
 
 interface Note {
   id: number;
@@ -22,17 +23,38 @@ export default function NotesPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const userId = 1;
-  const sectionId = 3;
+  const { data: session, status } = useSession();
+const [sectionId, setSectionId] = useState<number | null>(null);
+const userId = session?.user?.id ? parseInt(session.user.id) : null;
+
+// // Fetch user's enrolled sections
+// useEffect(() => {
+//   if (userId) {
+//     fetch(`/api/user/sections?userId=${userId}`)
+//       .then(res => res.json())
+//       .then(data => {
+//         if (data.sections && data.sections.length > 0) {
+//           setSectionId(data.sections[0].section_id);
+//         }
+//       })
+//       .catch(err => console.error('Error fetching sections:', err));
+//   }
+// }, [userId]);
+
+// if (status === 'loading' || sectionId === null) {
+//   return <div>Loading...</div>;
+// }
+
+// if (!userId) {
+//   return <div>Please sign in to view notes</div>;
+// }
 
   const fetchNotes = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
-
-      const res = await fetch(
-        `/api/notes?userId=${userId}&sectionId=${sectionId}`
-      );
+    
+      const res = await fetch(`/api/notes?userId=${userId}`);
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -59,7 +81,8 @@ export default function NotesPage() {
 
   const createNote = async (): Promise<void> => {
     try {
-      const res = await fetch('/api/notes', {
+      // const res = await fetch('/api/notes', {
+      const res = await fetch('http://localhost:3001/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,7 +90,7 @@ export default function NotesPage() {
           content: { type: 'excalidraw', elements: [] },
           text_content: '',
           user_id: userId,
-          section_id: sectionId,
+          // section_id: sectionId,
         }),
       });
 

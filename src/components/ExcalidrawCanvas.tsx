@@ -1,5 +1,6 @@
+//src/components/ExcalidrawCanvas.tsx
 'use client';
-import ExcalidrawCanvas from '@/src/components/ExcalidrawCanvas';
+// import ExcalidrawCanvas from '@/components/ExcalidrawCanvas';
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';

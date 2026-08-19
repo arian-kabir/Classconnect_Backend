@@ -54,7 +54,15 @@ export default function SignInPage() {
       }
 
       // Successful login - redirect to dashboard
-      router.push('/');
+      const session = await fetch('/api/auth/session').then(res => res.json());
+      const role = session?.user?.role || 'student';
+    
+    // ✅ Redirect based on role
+    if (role === 'admin') {
+      router.push('/admin');
+    } else {
+      router.push('/'); // Students and teachers go to routine orchestrator
+    }
       router.refresh();
     } catch (err) {
       console.error('Sign in error:', err);

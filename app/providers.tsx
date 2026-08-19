@@ -1,5 +1,4 @@
 // frontend/src/app/providers.tsx
-
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
@@ -12,6 +11,8 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
+    {/* baseUrl={process.env.NEXTAUTH_URL}
+    basePath="/api/auth"> */}
       {children}
     </SessionProvider>
   );
