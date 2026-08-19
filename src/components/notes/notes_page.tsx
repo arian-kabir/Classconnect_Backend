@@ -1,8 +1,8 @@
-// src/components/notes/notes_page.tsx
+// src/app/notes/page.tsx
 'use client';
 
-import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
+// import ExcalidrawCanvas from '../components/ExcalidrawCanvas';
 import ExcalidrawCanvas from '@/components/ExcalidrawCanvas';
 
 interface Note {
@@ -23,38 +23,17 @@ export default function NotesPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: session, status } = useSession();
-const [sectionId, setSectionId] = useState<number | null>(null);
-const userId = session?.user?.id ? parseInt(session.user.id) : null;
-
-// // Fetch user's enrolled sections
-// useEffect(() => {
-//   if (userId) {
-//     fetch(`/api/user/sections?userId=${userId}`)
-//       .then(res => res.json())
-//       .then(data => {
-//         if (data.sections && data.sections.length > 0) {
-//           setSectionId(data.sections[0].section_id);
-//         }
-//       })
-//       .catch(err => console.error('Error fetching sections:', err));
-//   }
-// }, [userId]);
-
-// if (status === 'loading' || sectionId === null) {
-//   return <div>Loading...</div>;
-// }
-
-// if (!userId) {
-//   return <div>Please sign in to view notes</div>;
-// }
+  const userId = 1;
+  const sectionId = 3;
 
   const fetchNotes = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
-    
-      const res = await fetch(`/api/notes?userId=${userId}`);
+
+      const res = await fetch(
+        `/api/notes?userId=${userId}&sectionId=${sectionId}`
+      );
 
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -81,8 +60,7 @@ const userId = session?.user?.id ? parseInt(session.user.id) : null;
 
   const createNote = async (): Promise<void> => {
     try {
-      // const res = await fetch('/api/notes', {
-      const res = await fetch('http://localhost:3001/api/notes', {
+      const res = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,7 +68,7 @@ const userId = session?.user?.id ? parseInt(session.user.id) : null;
           content: { type: 'excalidraw', elements: [] },
           text_content: '',
           user_id: userId,
-          // section_id: sectionId,
+          section_id: sectionId,
         }),
       });
 
@@ -218,32 +196,96 @@ const userId = session?.user?.id ? parseInt(session.user.id) : null;
                   }`}
                 >
                   <div className="note-card-main">
-                    <div className="note-card-icon">
-                      ✎
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+
+                      const newTitle = prompt(
+                        'Enter a new title:',
+                        note.title
+                      );
+
+                      if (!newTitle || newTitle.trim() === note.title) {
+                        return;
+                      }
+
+                      try {
+                        const res = await fetch(`/api/notes/${note.id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            userId,
+                            title: newTitle.trim(),
+                          }),
+                        });
+
+                        const data = await res.json();
+
+                        if (data.success) {
+                          setNotes((currentNotes) =>
+                            currentNotes.map((n) =>
+                              n.id === note.id
+                                ? { ...n, title: newTitle.trim() }
+                                : n
+                            )
+                          );
+
+                          if (selectedNote?.id === note.id) {
+                            setSelectedNote({
+                              ...selectedNote,
+                              title: newTitle.trim(),
+                            });
+                          }
+                        } else {
+                          console.error('Rename failed:', data.error);
+                        }
+                      } catch (error) {
+                        console.error('Rename error:', error);
+                      }
+                    }}
+                    className="edit-note-button"
+                    aria-label={`Edit title of ${note.title}`}
+                    title="Edit note title"
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+
+                  <div className="note-card-content">
+                    <div className="note-card-title">
+                      {note.title}
                     </div>
 
-                    <div className="note-card-content">
-                      <div className="note-card-title">
-                        {note.title}
-                      </div>
-
-                      <div className="note-card-date">
-                        {new Date(
-                          note.updated_at
-                        ).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </div>
+                    <div className="note-card-date">
+                      {new Date(note.updated_at).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </div>
                   </div>
 
+                  
+                </div>
+
                   <button
                     onClick={(e) => {
-                      e.stopPropagation();
-                      deleteNote(note.id);
-                    }}
+                        e.stopPropagation();
+                        deleteNote(note.id);
+                      }}
                     className="delete-note-button"
                     aria-label={`Delete ${note.title}`}
                   >
