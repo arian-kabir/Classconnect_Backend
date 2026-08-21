@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
+    "@types/socket.io-client": "^1.4.36",
     "next": "16.3.1",
     "next-auth": "^4.24.15",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

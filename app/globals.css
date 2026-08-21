@@ -57,7 +57,1646 @@ body {
     Helvetica,
     sans-serif;
 }
+/* ============================================================
+   CLASSCONNECT APPLICATION SHELL
+   ============================================================
 
+   These styles control the global navigation and homepage.
+
+   The existing Notes page styles are intentionally kept separate
+   so changes here do not accidentally break the Excalidraw
+   workspace.
+
+   ============================================================ */
+
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  width: 100%;
+
+  background: rgba(255, 255, 255, 0.92);
+
+  border-bottom: 1px solid var(--border);
+
+  /* Gives the navbar a subtle glass effect */
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  /* Keeps the navbar visually separated from page content */
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+
+/* Main navbar container */
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+
+  width: min(1400px, calc(100% - 48px));
+  min-height: 72px;
+
+  margin: 0 auto;
+
+  gap: 30px;
+}
+
+
+/* ============================================================
+   BRAND
+   ============================================================ */
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+
+  flex-shrink: 0;
+
+  gap: 11px;
+
+  color: var(--foreground);
+
+  text-decoration: none;
+}
+
+
+/* Logo square */
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 11px;
+
+  background: var(--primary);
+
+  color: white;
+
+  font-size: 17px;
+  font-weight: 800;
+
+  letter-spacing: -0.04em;
+
+  box-shadow:
+    0 5px 12px rgba(37, 99, 235, 0.20);
+}
+
+
+/* Brand text wrapper */
+
+.navbar-brand-text {
+  display: flex;
+  flex-direction: column;
+
+  line-height: 1.1;
+}
+
+
+/* Main brand name */
+
+.navbar-title {
+  color: #111827;
+
+  font-size: 16px;
+  font-weight: 750;
+
+  letter-spacing: -0.025em;
+}
+
+
+/* Small brand subtitle */
+
+.navbar-subtitle {
+  margin-top: 4px;
+
+  color: var(--muted-light);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.09em;
+
+  text-transform: uppercase;
+}
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.navbar-navigation {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  margin-left: 18px;
+}
+
+
+/* Individual navigation item */
+
+.navbar-link {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  min-height: 38px;
+
+  padding: 0 13px;
+
+  border-radius: 9px;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+
+/* Small navigation icon */
+
+.navbar-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 17px;
+
+  color: #94a3b8;
+
+  font-size: 13px;
+
+  transition: color 0.18s ease;
+}
+
+
+/* Hover */
+
+.navbar-link:hover {
+  background: #f8fafc;
+
+  color: #334155;
+}
+
+
+/* Active navigation item */
+
+.navbar-link-active {
+  background: var(--primary-soft);
+
+  color: var(--primary);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+}
+
+
+/* Active icon */
+
+.navbar-link-active .navbar-link-icon {
+  color: var(--primary);
+}
+
+
+/* ============================================================
+   NAVBAR RIGHT SIDE
+   ============================================================ */
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  margin-left: auto;
+}
+
+
+/* ============================================================
+   USER INFORMATION
+   ============================================================ */
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding-right: 14px;
+
+  border-right: 1px solid var(--border);
+}
+
+
+/* Avatar */
+
+.navbar-user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 10px;
+
+  background: #eaf0ff;
+
+  color: var(--primary);
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+/* User information */
+
+.navbar-user-info {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+/* Username */
+
+.navbar-user-name {
+  color: #334155;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* Online status */
+
+.navbar-user-status {
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+
+  color: #94a3b8;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+
+/* Online dot */
+
+.navbar-status-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+}
+
+
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+
+.navbar-logout {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  min-height: 36px;
+
+  padding: 0 12px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 9px;
+
+  background: white;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+
+/* Logout hover */
+
+.navbar-logout:hover {
+  background: #fef2f2;
+
+  border-color: #fecaca;
+
+  color: #dc2626;
+
+  transform: translateY(-1px);
+}
+
+
+/* Logout icon */
+
+.navbar-logout-icon {
+  font-size: 14px;
+}
+
+
+/* ============================================================
+   HOMEPAGE
+   ============================================================ */
+
+.home-page {
+  width: min(1400px, calc(100% - 48px));
+
+  margin: 0 auto;
+
+  padding: 42px 0 60px;
+}
+
+
+/* ============================================================
+   HERO
+   ============================================================ */
+
+.home-hero {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(400px, 0.82fr);
+
+  align-items: center;
+
+  min-height: 430px;
+
+  overflow: hidden;
+
+  padding: 48px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 24px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #f8faff 55%,
+      #f1f5ff 100%
+    );
+
+  box-shadow:
+    0 15px 45px rgba(15, 23, 42, 0.06);
+}
+
+
+/* ============================================================
+   HERO TEXT
+   ============================================================ */
+
+.home-hero-content {
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 650px;
+}
+
+
+/* Small label */
+
+.home-eyebrow {
+  display: inline-flex;
+  align-items: center;
+
+  height: 28px;
+
+  padding: 0 10px;
+
+  margin-bottom: 17px;
+
+  border: 1px solid #dbe5ff;
+
+  border-radius: 999px;
+
+  background: #f4f7ff;
+
+  color: var(--primary);
+
+  font-size: 10px;
+  font-weight: 750;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+}
+
+
+/* Main heading */
+
+.home-title {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: clamp(42px, 5vw, 64px);
+
+  font-weight: 800;
+
+  line-height: 1;
+
+  letter-spacing: -0.055em;
+}
+
+
+/* Blue period */
+
+.home-title-dot {
+  color: var(--primary);
+}
+
+
+/* Hero description */
+
+.home-description {
+  max-width: 520px;
+
+  margin: 20px 0 0;
+
+  color: #64748b;
+
+  font-size: 16px;
+
+  line-height: 1.7;
+}
+
+
+/* ============================================================
+   HERO ACTIONS
+   ============================================================ */
+
+.home-hero-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 28px;
+}
+
+
+/* Primary action */
+
+.home-primary-action {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 8px;
+
+  height: 43px;
+
+  padding: 0 17px;
+
+  border-radius: 10px;
+
+  background: var(--primary);
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-decoration: none;
+
+  box-shadow:
+    0 6px 15px rgba(37, 99, 235, 0.20);
+
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+
+.home-primary-action:hover {
+  background: var(--primary-dark);
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(37, 99, 235, 0.25);
+}
+
+
+/* Small icon inside primary button */
+
+.home-action-icon {
+  font-size: 15px;
+}
+
+
+/* Secondary action */
+
+.home-secondary-action {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 9px;
+
+  height: 43px;
+
+  padding: 0 16px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: white;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-decoration: none;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+
+.home-secondary-action:hover {
+  background: #f8fafc;
+
+  border-color: #cbd5e1;
+
+  color: #1e293b;
+
+  transform: translateY(-2px);
+}
+
+
+/* Arrow */
+
+.home-arrow {
+  font-size: 15px;
+}
+
+
+/* ============================================================
+   HERO VISUAL
+   ============================================================ */
+
+.home-hero-visual {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 330px;
+}
+
+
+/* Decorative circle */
+
+.hero-decoration {
+  position: absolute;
+
+  border-radius: 50%;
+
+  pointer-events: none;
+}
+
+
+/* Large background circle */
+
+.hero-decoration-one {
+  width: 310px;
+  height: 310px;
+
+  right: 10px;
+  top: 10px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(219, 234, 254, 0.8),
+      rgba(239, 246, 255, 0.15)
+    );
+}
+
+
+/* Smaller circle */
+
+.hero-decoration-two {
+  width: 120px;
+  height: 120px;
+
+  right: 15px;
+  bottom: 10px;
+
+  border: 20px solid rgba(191, 219, 254, 0.35);
+
+  background: transparent;
+}
+
+
+/* ============================================================
+   FAKE DASHBOARD PREVIEW
+   ============================================================ */
+
+.hero-preview {
+  position: relative;
+
+  z-index: 2;
+
+  width: min(100%, 440px);
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, 0.8);
+
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.94);
+
+  box-shadow:
+    0 25px 55px rgba(30, 64, 175, 0.13),
+    0 5px 15px rgba(15, 23, 42, 0.05);
+
+  transform: rotate(1.5deg);
+}
+
+
+/* Preview header */
+
+.hero-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 17px 18px;
+
+  border-bottom: 1px solid #edf0f5;
+}
+
+
+/* Preview brand */
+
+.hero-preview-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+}
+
+
+/* Preview logo */
+
+.hero-preview-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 29px;
+  height: 29px;
+
+  border-radius: 8px;
+
+  background: var(--primary);
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+/* Preview brand text */
+
+.hero-preview-brand div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+
+.hero-preview-brand strong {
+  color: #1e293b;
+
+  font-size: 11px;
+}
+
+
+.hero-preview-brand span {
+  color: #94a3b8;
+
+  font-size: 8px;
+}
+
+
+/* Preview active status */
+
+.hero-preview-status {
+  color: #22a65a;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+
+/* Preview content */
+
+.hero-preview-content {
+  padding: 21px;
+}
+
+
+/* Preview heading */
+
+.hero-preview-heading {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  margin-bottom: 16px;
+}
+
+
+.hero-preview-heading span {
+  color: #94a3b8;
+
+  font-size: 9px;
+}
+
+
+.hero-preview-heading strong {
+  color: #1e293b;
+
+  font-size: 17px;
+}
+
+
+/* Mini cards */
+
+.hero-preview-cards {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 9px;
+}
+
+
+/* Mini card */
+
+.hero-mini-card {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 13px;
+
+  border: 1px solid #edf0f5;
+
+  border-radius: 11px;
+
+  background: #fafbfc;
+}
+
+
+/* Mini card icon */
+
+.hero-mini-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 30px;
+  height: 30px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+.notes-icon {
+  background: #eaf1ff;
+
+  color: var(--primary);
+}
+
+
+.chat-icon {
+  background: #e9faf4;
+
+  color: #16a36b;
+}
+
+
+/* Mini card text */
+
+.hero-mini-card div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.hero-mini-card strong {
+  color: #334155;
+
+  font-size: 10px;
+}
+
+
+.hero-mini-card span {
+  color: #94a3b8;
+
+  font-size: 8px;
+}
+
+
+/* Decorative progress bar */
+
+.hero-progress {
+  height: 5px;
+
+  margin-top: 18px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #eef2f7;
+}
+
+
+.hero-progress span {
+  display: block;
+
+  width: 68%;
+  height: 100%;
+
+  border-radius: inherit;
+
+  background: var(--primary);
+}
+
+
+/* ============================================================
+   DASHBOARD SECTION
+   ============================================================ */
+
+.home-dashboard {
+  padding-top: 48px;
+}
+
+
+/* Section heading */
+
+.home-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 30px;
+
+  margin-bottom: 20px;
+}
+
+
+/* Small section label */
+
+.home-section-eyebrow {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--primary);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.1em;
+
+  text-transform: uppercase;
+}
+
+
+/* Section title */
+
+.home-section-header h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 23px;
+  font-weight: 750;
+
+  letter-spacing: -0.035em;
+}
+
+
+/* Section description */
+
+.home-section-header p {
+  margin: 0 0 2px;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   CARD GRID
+   ============================================================ */
+
+.home-card-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 15px;
+}
+
+
+/* ============================================================
+   FEATURE CARD
+   ============================================================ */
+
+.home-feature-card {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+
+  min-height: 255px;
+
+  padding: 22px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+
+  border-radius: 16px;
+
+  background: white;
+
+  color: inherit;
+
+  text-decoration: none;
+
+  box-shadow: var(--shadow-sm);
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+/* Hover */
+
+.home-feature-card:hover {
+  transform: translateY(-4px);
+
+  border-color: #d6dce6;
+
+  box-shadow:
+    0 15px 30px rgba(15, 23, 42, 0.08);
+}
+
+
+/* Primary card */
+
+.home-feature-card-primary {
+  border-color: #dbe5ff;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8faff
+    );
+}
+
+
+/* ============================================================
+   CARD TOP
+   ============================================================ */
+
+.home-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+/* Feature icon */
+
+.home-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 43px;
+  height: 43px;
+
+  border-radius: 12px;
+
+  background: #eaf1ff;
+
+  color: var(--primary);
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+
+/* Chat icon */
+
+.home-feature-icon-chat {
+  background: #eafaf5;
+
+  color: #159669;
+}
+
+
+/* Course icon */
+
+.home-feature-icon-course {
+  background: #f3f4f6;
+
+  color: #64748b;
+}
+
+
+/* Card arrow */
+
+.home-card-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 30px;
+  height: 30px;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+
+  color: #94a3b8;
+
+  font-size: 15px;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+
+.home-feature-card:hover .home-card-arrow {
+  background: var(--primary-soft);
+
+  color: var(--primary);
+}
+
+
+/* ============================================================
+   CARD BODY
+   ============================================================ */
+
+.home-card-body {
+  flex: 1;
+
+  padding-top: 23px;
+}
+
+
+/* Card category */
+
+.home-card-label {
+  color: #94a3b8;
+
+  font-size: 9px;
+  font-weight: 750;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+}
+
+
+/* Card title */
+
+.home-card-body h3 {
+  margin: 6px 0 8px;
+
+  color: #1e293b;
+
+  font-size: 19px;
+  font-weight: 750;
+
+  letter-spacing: -0.025em;
+}
+
+
+/* Card description */
+
+.home-card-body p {
+  max-width: 300px;
+
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+
+  line-height: 1.65;
+}
+
+
+/* ============================================================
+   CARD FOOTER
+   ============================================================ */
+
+.home-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding-top: 17px;
+
+  border-top: 1px solid #edf0f3;
+
+  color: #64748b;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+/* Footer arrow */
+
+.home-card-footer span:last-child {
+  color: #94a3b8;
+
+  font-size: 14px;
+}
+
+
+/* ============================================================
+   DISABLED / COMING SOON CARD
+   ============================================================ */
+
+.home-feature-card-disabled {
+  cursor: default;
+
+  background: #fafbfc;
+}
+
+
+.home-feature-card-disabled:hover {
+  transform: none;
+
+  border-color: var(--border);
+
+  box-shadow: var(--shadow-sm);
+}
+
+
+/* Coming soon badge */
+
+.home-coming-soon {
+  display: inline-flex;
+  align-items: center;
+
+  height: 25px;
+
+  padding: 0 8px;
+
+  border-radius: 999px;
+
+  background: #f1f5f9;
+
+  color: #94a3b8;
+
+  font-size: 9px;
+  font-weight: 750;
+}
+
+
+/* ============================================================
+   INFORMATION STRIP
+   ============================================================ */
+
+.home-info-strip {
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  margin-top: 15px;
+
+  padding: 16px 18px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.7);
+}
+
+
+/* Info icon */
+
+.home-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  width: 32px;
+  height: 32px;
+
+  border-radius: 9px;
+
+  background: #ecfdf5;
+
+  color: #16a34a;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+
+/* Info text */
+
+.home-info-strip strong {
+  display: block;
+
+  margin-bottom: 2px;
+
+  color: #334155;
+
+  font-size: 11px;
+}
+
+
+.home-info-strip p {
+  margin: 0;
+
+  color: #94a3b8;
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   LOADING SCREEN
+   ============================================================
+
+   This is currently unused because authentication loading is
+   commented out in page.tsx.
+
+   It is kept here so the loading UI can be enabled later.
+   ============================================================ */
+
+.home-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+  width: 100%;
+  min-height: calc(100vh - 72px);
+
+  gap: 12px;
+
+  background: var(--background);
+}
+
+
+.home-loading p {
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: 12px;
+}
+
+
+.home-loading-spinner {
+  width: 28px;
+  height: 28px;
+
+  border: 3px solid #e5e7eb;
+
+  border-top-color: var(--primary);
+
+  border-radius: 50%;
+
+  animation: notes-spin 0.7s linear infinite;
+}
+
+
+/* ============================================================
+   RESPONSIVE HOMEPAGE
+   ============================================================ */
+
+
+/* Tablet */
+
+@media (max-width: 1000px) {
+
+  .navbar-inner {
+    width: min(100% - 32px, 1400px);
+
+    gap: 18px;
+  }
+
+
+  .navbar-user-info {
+    display: none;
+  }
+
+
+  .navbar-user {
+    padding-right: 0;
+
+    border-right: 0;
+  }
+
+
+  .home-page {
+    width: min(100% - 32px, 1400px);
+  }
+
+
+  .home-hero {
+    grid-template-columns: 1fr;
+
+    gap: 30px;
+
+    padding: 40px;
+  }
+
+
+  .home-hero-visual {
+    min-height: 270px;
+  }
+
+
+  .hero-preview {
+    max-width: 470px;
+  }
+
+
+  .home-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+
+  .home-feature-card:last-child {
+    grid-column: span 2;
+  }
+}
+
+
+/* Smaller tablet / large phone */
+
+@media (max-width: 700px) {
+
+  .navbar-inner {
+    min-height: 64px;
+
+    width: calc(100% - 24px);
+  }
+
+
+  .navbar-navigation {
+    margin-left: auto;
+  }
+
+
+  .navbar-link {
+    padding: 0 9px;
+  }
+
+
+  .navbar-link-icon {
+    display: none;
+  }
+
+
+  .navbar-user {
+    display: none;
+  }
+
+
+  .navbar-logout span:last-child {
+    display: none;
+  }
+
+
+  .navbar-logout {
+    width: 36px;
+
+    padding: 0;
+
+    justify-content: center;
+  }
+
+
+  .home-page {
+    width: calc(100% - 24px);
+
+    padding-top: 20px;
+  }
+
+
+  .home-hero {
+    padding: 30px 24px;
+
+    border-radius: 18px;
+  }
+
+
+  .home-title {
+    font-size: 42px;
+  }
+
+
+  .home-description {
+    font-size: 14px;
+  }
+
+
+  .home-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+
+  .home-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .home-feature-card:last-child {
+    grid-column: auto;
+  }
+}
+
+
+/* Mobile */
+
+@media (max-width: 500px) {
+
+  .navbar-inner {
+    gap: 10px;
+  }
+
+
+  .navbar-title {
+    font-size: 14px;
+  }
+
+
+  .navbar-subtitle {
+    display: none;
+  }
+
+
+  .navbar-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+
+  .navbar-navigation {
+    gap: 2px;
+  }
+
+
+  .navbar-link {
+    min-height: 34px;
+
+    padding: 0 8px;
+
+    font-size: 11px;
+  }
+
+
+  .navbar-logout {
+    min-height: 34px;
+  }
+
+
+  .home-hero {
+    min-height: auto;
+
+    padding: 28px 20px;
+  }
+
+
+  .home-title {
+    font-size: 38px;
+  }
+
+
+  .home-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+
+  .home-primary-action,
+  .home-secondary-action {
+    justify-content: center;
+
+    width: 100%;
+  }
+
+
+  .home-hero-visual {
+    min-height: 230px;
+  }
+
+
+  .hero-preview {
+    transform: none;
+  }
+
+
+  .hero-preview-cards {
+    grid-template-columns: 1fr;
+  }
+
+
+  .hero-decoration-one {
+    width: 230px;
+    height: 230px;
+  }
+
+
+  .home-dashboard {
+    padding-top: 32px;
+  }
+
+
+  .home-feature-card {
+    min-height: 230px;
+  }
+}
 /* =========================================================
    NOTES PAGE
    ========================================================= */
@@ -870,4 +2509,27 @@ body {
   background: #e5e7eb; /* gray-200 */
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   border-radius: 0.25rem;
+}
+
+.share-note-button {
+    color: #9ca3af;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.share-note-button:hover {
+    color: #3b82f6;
+}
+
+.note-card-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
 }

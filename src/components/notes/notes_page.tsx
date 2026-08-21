@@ -2,8 +2,44 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// import ExcalidrawCanvas from '../components/ExcalidrawCanvas';
+import ShareModal from '@/components/ShareModal';
 import ExcalidrawCanvas from '@/components/ExcalidrawCanvas';
+
+const [shareModalOpen, setShareModalOpen] = useState(false);
+const [sharingNoteId, setSharingNoteId] = useState<number | null>(null);
+
+// Add share handler:
+const handleShareNote = async (noteId: number) => {
+    setSharingNoteId(noteId);
+    setShareModalOpen(true);
+};
+const handleConfirmShare = async (userIds: number[]) => {
+    if (!sharingNoteId) return;
+    
+    try {
+        const res = await fetch('/api/notes/share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                noteId: sharingNoteId,
+                ownerId: userId,
+                sharedWithUserIds: userIds,
+                permission: 'view'
+            })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+        } else {
+            alert('Failed to share note: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Share error:', error);
+        alert('Failed to share note');
+    }
+};
+
 
 interface Note {
   id: number;
@@ -306,6 +342,21 @@ export default function NotesPage() {
                       <path d="M14 11v5" />
                     </svg>
                   </button>
+                  <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareNote(note.id);
+                    }}
+                    className="share-note-button"
+                    aria-label={`Share ${note.title}`}
+                    title="Share this note"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                        <polyline points="16 6 12 2 8 6" />
+                        <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                </button>
                 </div>
               );
             })
@@ -381,7 +432,14 @@ export default function NotesPage() {
             </button>
           </div>
         )}
-      </main>
+        </main>
+        <ShareModal
+            noteId={sharingNoteId || 0}
+            userId={userId}
+            isOpen={shareModalOpen}
+            onClose={() => setShareModalOpen(false)}
+            onShare={handleConfirmShare}
+        />
     </div>
   );
 }
