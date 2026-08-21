@@ -13,7 +13,7 @@ export default function AdminPage() {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     }
-    if (status === 'authenticated' && session?.user?.role !== 'admin') {
+    if (status === 'authenticated' && (session?.user as any)?.role !== 'admin') {
       router.push('/'); // Redirect non-admins to homepage
     }
   }, [status, session, router]);
