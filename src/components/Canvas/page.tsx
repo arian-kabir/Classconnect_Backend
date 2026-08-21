@@ -1,44 +1,10 @@
-// src/app/notes/page.tsx
+// src/app/Canvas/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import ShareModal from '@/components/ShareModal';
 import ExcalidrawCanvas from '@/components/ExcalidrawCanvas';
 
-const [shareModalOpen, setShareModalOpen] = useState(false);
-const [sharingNoteId, setSharingNoteId] = useState<number | null>(null);
-
-// Add share handler:
-const handleShareNote = async (noteId: number) => {
-    setSharingNoteId(noteId);
-    setShareModalOpen(true);
-};
-const handleConfirmShare = async (userIds: number[]) => {
-    if (!sharingNoteId) return;
-    
-    try {
-        const res = await fetch('/api/notes/share', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                noteId: sharingNoteId,
-                ownerId: userId,
-                sharedWithUserIds: userIds,
-                permission: 'view'
-            })
-        });
-        
-        const data = await res.json();
-        if (data.success) {
-            alert(data.message);
-        } else {
-            alert('Failed to share note: ' + data.error);
-        }
-    } catch (error) {
-        console.error('Share error:', error);
-        alert('Failed to share note');
-    }
-};
 
 
 interface Note {
@@ -53,11 +19,47 @@ interface Note {
   updated_at: string;
 }
 
-export default function NotesPage() {
+export default function CanvasPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [sharingNoteId, setSharingNoteId] = useState<number | null>(null);
+    
+  const handleShareNote = async (noteId: number) => {
+      setSharingNoteId(noteId);
+      setShareModalOpen(true);
+  };
+  const handleConfirmShare = async (userIds: number[]) => {
+      if (!sharingNoteId) return;
+      
+      try {
+          const res = await fetch('/api/canvas/share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  noteId: sharingNoteId,
+                  ownerId: userId,
+                  sharedWithUserIds: userIds,
+                  permission: 'view'
+              })
+          });
+          
+          const data = await res.json();
+          if (data.success) {
+              alert(data.message);
+          } else {
+              alert('Failed to share note: ' + data.error);
+          }
+      } catch (error) {
+          console.error('Share error:', error);
+          alert('Failed to share note');
+      }
+  };
+
+
 
   const userId = 1;
   const sectionId = 3;
@@ -68,7 +70,7 @@ export default function NotesPage() {
       setError(null);
 
       const res = await fetch(
-        `/api/notes?userId=${userId}&sectionId=${sectionId}`
+        `/api/canvas?userId=${userId}&sectionId=${sectionId}`
       );
 
       if (!res.ok) {
@@ -88,7 +90,7 @@ export default function NotesPage() {
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      setError('Error loading notes. Please try again.');
+      setError('Error loading canvas. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,7 +98,7 @@ export default function NotesPage() {
 
   const createNote = async (): Promise<void> => {
     try {
-      const res = await fetch('/api/notes', {
+      const res = await fetch('/api/canvas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,7 +126,7 @@ export default function NotesPage() {
 
     try {
       const res = await fetch(
-        `/api/notes/${noteId}?userId=${userId}`,
+        `/api/canvas/${noteId}?userId=${userId}`,
         {
           method: 'DELETE',
         }
@@ -246,7 +248,7 @@ export default function NotesPage() {
                       }
 
                       try {
-                        const res = await fetch(`/api/notes/${note.id}`, {
+                        const res = await fetch(`/api/canvas/${note.id}`, {
                           method: 'PUT',
                           headers: {
                             'Content-Type': 'application/json',

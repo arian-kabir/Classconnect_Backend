@@ -1,42 +1,131 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #f6f7fb;
-  --foreground: #171a21;
+  --background: #f8f9fa;
+  --foreground: #191c1d;
+
+  --surface: #f8f9fa;
+  --surface-dim: #d9dadb;
+  --surface-bright: #f8f9fa;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f3f4f5;
+  --surface-container: #edeeef;
+  --surface-container-high: #e7e8e9;
+  --surface-container-highest: #e1e3e4;
+  --on-surface: #191c1d;
+  --on-surface-variant: #404848;
+  --inverse-surface: #2e3132;
+  --inverse-on-surface: #f0f1f2;
+  --outline: #707978;
+  --outline-variant: #c0c8c7;
+  --surface-tint: #356666;
+  --primary: #002626;
+  --on-primary: #ffffff;
+  --primary-container: #003d3d;
+  --on-primary-container: #76a8a7;
+  --inverse-primary: #9dd0cf;
+  --secondary: #51625b;
+  --on-secondary: #ffffff;
+  --secondary-container: #d4e7dd;
+  --on-secondary-container: #576861;
+  --tertiary: #1b2321;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #303836;
+  --on-tertiary-container: #99a19f;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  --primary-fixed: #b9eceb;
+  --primary-fixed-dim: #9dd0cf;
+  --on-primary-fixed: #002020;
+  --on-primary-fixed-variant: #1a4e4e;
+  --secondary-fixed: #d4e7dd;
+  --secondary-fixed-dim: #b9cbc2;
+  --on-secondary-fixed: #0f1f19;
+  --on-secondary-fixed-variant: #3a4a43;
+  --tertiary-fixed: #dce4e1;
+  --tertiary-fixed-dim: #c0c8c5;
+  --on-tertiary-fixed: #161d1c;
+  --on-tertiary-fixed-variant: #404846;
+  --surface-variant: #e1e3e4;
 
   --sidebar-background: #ffffff;
-  --surface: #ffffff;
   --surface-muted: #f8f9fc;
-
   --border: #e5e7eb;
   --border-strong: #d9dde5;
-
-  --primary: #2563eb;
   --primary-dark: #1d4ed8;
   --primary-soft: #eff6ff;
-
   --danger: #dc2626;
   --danger-soft: #fef2f2;
-
   --muted: #6b7280;
   --muted-light: #9ca3af;
-
-  --shadow-sm:
-    0 1px 2px rgba(15, 23, 42, 0.04);
-
-  --shadow-md:
-    0 8px 24px rgba(15, 23, 42, 0.07);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.07);
 }
 
-@theme inline {
+@theme {
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-tint: var(--surface-tint);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-on-background: var(--on-background);
+  --color-surface-variant: var(--surface-variant);
+
+  --font-sans: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-hanken: 'Hanken Grotesk', system-ui, sans-serif;
+
+  --radius-sm: 0.25rem;
+  --radius-DEFAULT: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.0rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-interactive: 0px 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -51,11 +140,75 @@ body {
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  color: var(--on-background);
+  font-family: var(--font-sans);
+}
+
+@utility text-display {
+  font-family: var(--font-hanken);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+}
+
+@utility text-headline-lg {
+  font-family: var(--font-hanken);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+}
+
+@utility text-headline-lg-mobile {
+  font-family: var(--font-hanken);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+@utility text-headline-md {
+  font-family: var(--font-hanken);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+@utility text-title-lg {
+  font-family: var(--font-hanken);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+@utility text-body-lg {
+  font-family: var(--font-hanken);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+@utility text-body-md {
+  font-family: var(--font-hanken);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+@utility text-label-lg {
+  font-family: var(--font-hanken);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+}
+
+@utility text-label-sm {
+  font-family: var(--font-hanken);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 /* ============================================================
    CLASSCONNECT APPLICATION SHELL

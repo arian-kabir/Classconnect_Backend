@@ -47,9 +47,7 @@ export default function ExcalidrawCanvas({
   initialContent,
   onSave,
 }: ExcalidrawCanvasProps) {
-  const [elements, setElements] = useState<
-    ExcalidrawElement[]
-  >([]);
+  const [elements, setElements] = useState<any[]>([]);
 
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -119,7 +117,7 @@ export default function ExcalidrawCanvas({
 
     try {
       const response = await fetch(
-        `/api/notes/${noteId}`,
+        `/api/canvas/${noteId}`,
         {
           method: 'PUT',
           headers: {
@@ -180,9 +178,9 @@ export default function ExcalidrawCanvas({
           <Excalidraw
             key={noteId || 'empty'}
             initialData={{
-              elements,
+              elements: elements as any,
             }}
-            onChange={setElements}
+            onChange={(newElements: any) => setElements(newElements as any)}
           />
         )}
       </div>

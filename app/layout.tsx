@@ -9,8 +9,8 @@ import Navbar from '@/components/NavBar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ClassConnect - University Repository & Communication Platform',
-  description: 'A comprehensive platform for university course materials and communication',
+  title: "ClassConnect — University Repository & Communication Platform",
+  description: "Consolidate your course materials, communications, and schedules into one intelligent academic hub.",
 };
 
 export default function RootLayout({

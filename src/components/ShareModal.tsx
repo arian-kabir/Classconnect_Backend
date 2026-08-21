@@ -35,7 +35,7 @@ export default function ShareModal({ noteId, userId, isOpen, onClose, onShare }:
     const fetchShareableUsers = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`/api/notes/share?noteId=${noteId}&userId=${userId}`);
+            const res = await fetch(`/api/canvas/share?noteId=${noteId}&userId=${userId}`);
             const data = await res.json();
             setUsers(data.users || []);
         } catch (error) {
