@@ -117,7 +117,7 @@ export default function ExcalidrawCanvas({
 
     try {
       const response = await fetch(
-        `/api/notes/${noteId}`,
+        `/api/canvas/${noteId}`,
         {
           method: 'PUT',
           headers: {

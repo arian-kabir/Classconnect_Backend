@@ -57,7 +57,6 @@ export default function SignInPage() {
       const session = await fetch('/api/auth/session').then(res => res.json());
       const role = session?.user?.role || 'student';
     
-    // ✅ Redirect based on role
     if (role === 'admin') {
       router.push('/admin');
     } else {
@@ -108,7 +107,7 @@ export default function SignInPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@bracu.ac.bd"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
 
@@ -124,7 +123,7 @@ export default function SignInPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
               />
               <button
                 type="button"
@@ -177,6 +176,18 @@ export default function SignInPage() {
           </svg>
           Sign in with Google
         </button>
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={() => router.push('/auth/signup')}
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              Sign up
+            </button>
+          </p>
+        </div>
 
         <div className="text-center">
           <p className="text-sm text-gray-600">
