@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import RoutineOrchestrator from '@/components/RoutineOrchestrator';
 import StaffingLedger from '@/components/StaffingLedger';
+import MaterialPipelineBoard from '@/components/MaterialPipelineBoard';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -347,7 +348,16 @@ export default function DashboardPage() {
               )}
 
               {/* =========================================================
-                  4. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
+                  4. COURSE MATERIAL PROVISIONING PIPELINE (M2)
+                  ========================================================= */}
+              {activeTab === 'Notes' && (
+                <div className="flex flex-col gap-4">
+                  <MaterialPipelineBoard />
+                </div>
+              )}
+
+              {/* =========================================================
+                  5. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
                   ========================================================= */}
               <StaffingLedger />
             </main>
