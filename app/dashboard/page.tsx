@@ -10,7 +10,7 @@ import StaffingLedger from '@/components/StaffingLedger';
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Routine' | 'Notes' | 'Chat'>('Routine');
+  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat'>('Routine');
   const [showRemainder, setShowRemainder] = useState(true);
 
   useEffect(() => {
@@ -140,8 +140,7 @@ export default function DashboardPage() {
           <div className="flex-1 flex flex-col min-w-0">
             {/* Top Navigation Bar */}
             <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
-                      <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-8">
+              <div className="flex items-center gap-8">
             <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
               ClassConnect: Academic Portal
             </h1>
