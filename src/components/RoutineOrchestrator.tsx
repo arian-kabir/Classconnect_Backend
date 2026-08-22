@@ -1,7 +1,7 @@
 "use client";
 
-import RoutineBuilder from '@/app/components/RoutineBuilder';
-import RoutineDisplay from '@/app/components/RoutineDisplay';
+import RoutineBuilder from './RoutineBuilder';
+import RoutineDisplay from './RoutineDisplay';
 
 export default function RoutineOrchestrator() {
   return (
