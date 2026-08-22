@@ -272,7 +272,10 @@ export default function DashboardPage() {
                     </svg>
                   </div>
                   <span className="font-semibold text-sm text-[#191c1d]">Canvas</span>
-                        <div
+                </div>
+
+                {/* Card 3: Notes and Material */}
+                <div
                   onClick={() => setActiveTab('Notes')}
                   className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
                     activeTab === 'Notes' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
