@@ -13,7 +13,9 @@
  *   our custom user fields without type casts.
  */
 
-import type { RowDataPacket } from 'mysql2/promise';
+export interface RowDataPacket {
+  [column: string]: any;
+}
 import type { DefaultSession } from 'next-auth';
 import type { DefaultJWT } from 'next-auth/jwt';
 

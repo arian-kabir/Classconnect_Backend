@@ -52,7 +52,7 @@ export default function ChatRoom({ roomId, userId, roomName }: ChatRoomProps) {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('new-message', (data) => {
+    socket.on('new-message', (data: any) => {
       setMessages(prev => [...prev, data.message]);
     });
 

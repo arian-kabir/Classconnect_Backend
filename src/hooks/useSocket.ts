@@ -2,18 +2,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import io, { Socket } from 'socket.io-client';
+import io from 'socket.io-client';
+
+type SocketType = ReturnType<typeof io>;
 
 export function useSocket(userId: number | null) {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<SocketType | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
 
-    const socketInstance = io('http://localhost:3001', {
+    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
       transports: ['websocket'],
-      withCredentials: true,
     });
 
     socketInstance.on('connect', () => {
