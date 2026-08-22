@@ -229,8 +229,17 @@ export default function MaterialPipelineBoard() {
                           disabled={isUploading}
                         />
                         <div className="relative flex items-center justify-center w-full">
-                          <label className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${selectedFile ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400'}`}>
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <label 
+                            className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${selectedFile ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400'}`}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                setSelectedFile(e.dataTransfer.files[0]);
+                              }
+                            }}
+                          >
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                               <UploadCloud className={`w-6 h-6 mb-2 ${selectedFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                               <p className="mb-1 text-xs text-slate-500 font-medium text-center">
                                 {selectedFile ? (
