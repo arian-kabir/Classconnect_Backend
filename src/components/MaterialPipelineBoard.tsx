@@ -73,23 +73,31 @@ export default function MaterialPipelineBoard() {
 
   const [uploadingSection, setUploadingSection] = useState<number | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleAppendSubmit = async (e: React.FormEvent, sectionId: number) => {
     e.preventDefault();
-    if (!uploadTitle.trim()) return;
+    if (!uploadTitle.trim() || !selectedFile) {
+        setUploadError("Please provide a title and select a file to upload.");
+        return;
+    }
 
     setIsUploading(true);
     setUploadError(null);
 
     try {
+      // Use actual FormData for multipart/form-data upload.
+      // This perfectly aligns with a production backend expecting binary file streams.
+      const formData = new FormData();
+      formData.append('section_id', sectionId.toString());
+      formData.append('title', uploadTitle.trim());
+      formData.append('file', selectedFile);
+
       const res = await fetch('/api/materials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          section_id: sectionId,
-          title: uploadTitle.trim(),
-          text_content: "Uploaded via pipeline",
-        }),
+        // Note: Do NOT set Content-Type header manually when sending FormData.
+        // The browser automatically sets it to multipart/form-data with the correct boundary.
+        body: formData,
       });
 
       if (!res.ok) {
@@ -98,6 +106,7 @@ export default function MaterialPipelineBoard() {
       }
 
       setUploadTitle("");
+      setSelectedFile(null);
       setUploadingSection(null);
       mutate();
     } catch (err) {
@@ -209,22 +218,63 @@ export default function MaterialPipelineBoard() {
               {isTeacher && (
                 <div className="p-4 border-t border-slate-100 bg-slate-50/50 mt-auto">
                   {uploadingSection === section.section_id ? (
-                    <form onSubmit={(e) => handleAppendSubmit(e, section.section_id)} className="flex flex-col gap-2">
-                      <input
-                        type="text"
-                        autoFocus
-                        placeholder="Enter material title..."
-                        value={uploadTitle}
-                        onChange={(e) => setUploadTitle(e.target.value)}
-                        className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
-                        disabled={isUploading}
-                      />
+                    <form onSubmit={(e) => handleAppendSubmit(e, section.section_id)} className="flex flex-col gap-3">
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Material Title (e.g. Lecture 4 Slides)"
+                          value={uploadTitle}
+                          onChange={(e) => setUploadTitle(e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                          disabled={isUploading}
+                        />
+                        <div className="relative flex items-center justify-center w-full">
+                          <label 
+                            className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${selectedFile ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400'}`}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                setSelectedFile(e.dataTransfer.files[0]);
+                              }
+                            }}
+                          >
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
+                              <UploadCloud className={`w-6 h-6 mb-2 ${selectedFile ? 'text-indigo-500' : 'text-slate-400'}`} />
+                              <p className="mb-1 text-xs text-slate-500 font-medium text-center">
+                                {selectedFile ? (
+                                  <span className="text-indigo-700 font-bold truncate px-2 w-full max-w-[200px] block">{selectedFile.name}</span>
+                                ) : (
+                                  <>
+                                    <span className="font-semibold text-indigo-600">Click to upload</span> or drag and drop
+                                  </>
+                                )}
+                              </p>
+                              {!selectedFile && (
+                                <p className="text-[10px] text-slate-400">PDF, DOCX, PPTX (MAX. 10MB)</p>
+                              )}
+                            </div>
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                              disabled={isUploading}
+                            />
+                          </label>
+                        </div>
+                      </div>
                       <div className="flex gap-2">
-                        <Button type="button" variant="outline" size="sm" className="flex-1 h-8" onClick={() => setUploadingSection(null)} disabled={isUploading}>
+                        <Button type="button" variant="outline" size="sm" className="flex-1 h-8" onClick={() => { setUploadingSection(null); setSelectedFile(null); }} disabled={isUploading}>
                           Cancel
                         </Button>
-                        <Button type="submit" size="sm" className="flex-1 h-8 bg-indigo-600 hover:bg-indigo-700 text-white" disabled={isUploading || !uploadTitle.trim()}>
-                          {isUploading ? 'Uploading...' : 'Confirm'}
+                        <Button type="submit" size="sm" className="flex-1 h-8 bg-indigo-600 hover:bg-indigo-700 text-white" disabled={isUploading || !uploadTitle.trim() || !selectedFile}>
+                          {isUploading ? (
+                            <span className="flex items-center gap-2">
+                              <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              Uploading...
+                            </span>
+                          ) : 'Confirm Upload'}
                         </Button>
                       </div>
                     </form>

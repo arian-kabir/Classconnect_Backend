@@ -92,6 +92,7 @@ function normalizeTime(t: string): string {
 }
 
 import { mutate } from 'swr';
+import { Search } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -133,7 +134,19 @@ export default function RoutineBuilder() {
         const res = await fetch(`/api/courses${query}`, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: unknown = await res.json();
-        setCourses(Array.isArray(data) ? (data as CourseWithSections[]) : []);
+        
+        const newCourses = Array.isArray(data) ? (data as CourseWithSections[]) : [];
+        setCourses(newCourses);
+        
+        // Fix UI Issue: If the currently selected course is no longer in the search results, clear the dropdowns
+        setSelectedCourseId(prev => {
+          if (prev && !newCourses.some(c => c.course_id.toString() === prev)) {
+            // We can't call updateField easily inside setState, but we can set it via setFormData directly
+            setFormData(f => ({ ...f, section_id: "" }));
+            return "";
+          }
+          return prev;
+        });
       } catch (err) {
         if ((err as Error).name === 'AbortError') return;
         console.error('[RoutineBuilder] course fetch error:', err);
@@ -192,28 +205,31 @@ export default function RoutineBuilder() {
       return;
     }
 
-    // Normalize both times to HH:MM before comparison (fixes mixed-format issue)
-    const normalizedStart = normalizeTime(current.start_time);
-    const normalizedEnd   = normalizeTime(current.end_time);
-
-    if (!normalizedStart || !normalizedEnd) {
-      setError("Please enter both start and end times.");
-      return;
-    }
-
-    if (normalizedStart >= normalizedEnd) {
-      setError("Start time must be strictly before end time.");
-      return;
-    }
-
     // Build the exact payload that will be sent
-    const payload = {
-      section_id:  current.section_id,
-      day_of_week: current.day_of_week,
-      start_time:  normalizedStart,   // Always HH:MM — never HH:MM:SS
-      end_time:    normalizedEnd,      // Always HH:MM — never HH:MM:SS
-      room_number: current.room_number || null,
+    const payload: any = {
+      section_id: current.section_id,
     };
+
+    // Teachers/Admins must provide and validate times
+    if (!isStudent) {
+      const normalizedStart = normalizeTime(current.start_time);
+      const normalizedEnd   = normalizeTime(current.end_time);
+
+      if (!normalizedStart || !normalizedEnd) {
+        setError("Please enter both start and end times.");
+        return;
+      }
+
+      if (normalizedStart >= normalizedEnd) {
+        setError("Start time must be strictly before end time.");
+        return;
+      }
+
+      payload.day_of_week = current.day_of_week;
+      payload.start_time = normalizedStart;
+      payload.end_time = normalizedEnd;
+      payload.room_number = current.room_number || null;
+    }
 
     // DEV-ONLY: log exact payload for network debugging
     if (process.env.NODE_ENV === 'development') {
@@ -334,28 +350,35 @@ export default function RoutineBuilder() {
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
 
+          {/* Full-width Search Bar */}
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+              Find Course
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by course code or name (e.g., CSE471)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 h-9 text-sm border rounded-md border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white placeholder:text-slate-400 shadow-sm"
+              />
+            </div>
+          </div>
+
           {/* ── Row 1: Course + Section ──────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
             {/* Course picker */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label
-                  htmlFor="course-select"
-                  className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300"
-                >
-                  Course <span className="text-red-500" aria-hidden="true">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search course..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="text-xs h-6 px-2 w-28 border rounded border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
-                />
-              </div>
+              <label
+                htmlFor="course-select"
+                className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300"
+              >
+                Course <span className="text-red-500" aria-hidden="true">*</span>
+              </label>
               <Select
-                value={selectedCourseId}
+                value={selectedCourseId || undefined}
                 onValueChange={(val) => {
                   setSelectedCourseId(val ?? "");
                   // Reset section when course changes
@@ -390,7 +413,7 @@ export default function RoutineBuilder() {
                 Section <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <Select
-                value={formData.section_id}
+                value={formData.section_id || undefined}
                 onValueChange={(val) => updateField("section_id", val ?? "")}
                 disabled={!selectedCourseId || availableSections.length === 0}
               >
