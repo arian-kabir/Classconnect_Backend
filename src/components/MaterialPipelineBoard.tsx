@@ -59,13 +59,28 @@ export default function MaterialPipelineBoard() {
   const { data: session } = useSession();
   const isTeacher = session?.user?.role === 'teacher' || session?.user?.role === 'admin';
 
-  const { data, error: swrError, mutate } = useSWR<MaterialsApiResponse>('/api/materials', fetcher, {
+  const { data: materialsData, error: swrError, mutate } = useSWR<MaterialsApiResponse>('/api/materials', fetcher, {
     revalidateOnFocus: true,
     dedupingInterval: 5000,
   });
 
-  const isLoading = !data && !swrError;
+  const { data: routines } = useSWR<any[]>('/api/routines', fetcher);
+
+  const isLoading = !materialsData && !swrError;
   const error = swrError?.message || null;
+
+  // Filter sections for students based on their actual routine enrollments
+  const displayData = React.useMemo(() => {
+    if (!materialsData) return null;
+    if (isTeacher) return materialsData; // Teachers/Admins see all assigned pipeline sections
+
+    const enrolledSectionIds = new Set(routines?.map(r => r.section_id) || []);
+    
+    return {
+      ...materialsData,
+      sections: materialsData.sections.filter(s => enrolledSectionIds.has(s.section_id))
+    };
+  }, [materialsData, routines, isTeacher]);
   
   // Upload State
   const [isUploading, setIsUploading] = useState(false);
@@ -116,9 +131,9 @@ export default function MaterialPipelineBoard() {
     }
   };
 
-  if (isLoading && !data) return <BoardSkeleton />;
+  if (isLoading && !materialsData) return <BoardSkeleton />;
 
-  if (error && !data) {
+  if (error && !materialsData) {
     return (
       <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-red-100 shadow-sm">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
@@ -132,7 +147,7 @@ export default function MaterialPipelineBoard() {
     );
   }
 
-  if (!data || data.sections.length === 0) {
+  if (!displayData || displayData.sections.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-16 bg-white rounded-2xl border border-slate-200 shadow-sm text-center">
         <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -169,12 +184,12 @@ export default function MaterialPipelineBoard() {
           </p>
         </div>
         <Badge variant="outline" className="text-indigo-600 bg-indigo-50 border-indigo-100 px-3 py-1 text-sm font-semibold">
-          {data.total_materials} Files
+          {displayData.total_materials} Files
         </Badge>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {data.sections.map((section: MaterialSection) => (
+        {displayData.sections.map((section: MaterialSection) => (
           <Card key={section.section_id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow bg-white overflow-hidden flex flex-col">
             <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
               <div className="flex justify-between items-start">
