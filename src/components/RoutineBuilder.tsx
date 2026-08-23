@@ -133,7 +133,19 @@ export default function RoutineBuilder() {
         const res = await fetch(`/api/courses${query}`, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: unknown = await res.json();
-        setCourses(Array.isArray(data) ? (data as CourseWithSections[]) : []);
+        
+        const newCourses = Array.isArray(data) ? (data as CourseWithSections[]) : [];
+        setCourses(newCourses);
+        
+        // Fix UI Issue: If the currently selected course is no longer in the search results, clear the dropdowns
+        setSelectedCourseId(prev => {
+          if (prev && !newCourses.some(c => c.course_id.toString() === prev)) {
+            // We can't call updateField easily inside setState, but we can set it via setFormData directly
+            setFormData(f => ({ ...f, section_id: "" }));
+            return "";
+          }
+          return prev;
+        });
       } catch (err) {
         if ((err as Error).name === 'AbortError') return;
         console.error('[RoutineBuilder] course fetch error:', err);
@@ -355,7 +367,7 @@ export default function RoutineBuilder() {
                 />
               </div>
               <Select
-                value={selectedCourseId}
+                value={selectedCourseId || undefined}
                 onValueChange={(val) => {
                   setSelectedCourseId(val ?? "");
                   // Reset section when course changes
@@ -390,7 +402,7 @@ export default function RoutineBuilder() {
                 Section <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <Select
-                value={formData.section_id}
+                value={formData.section_id || undefined}
                 onValueChange={(val) => updateField("section_id", val ?? "")}
                 disabled={!selectedCourseId || availableSections.length === 0}
               >
