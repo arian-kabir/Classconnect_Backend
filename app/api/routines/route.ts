@@ -33,6 +33,12 @@ export async function POST(req: Request) {
   const body = await req.json();
 
   if (role === 'student') {
+    // Audit check 1: Student duplicate enrollment
+    const alreadyEnrolled = mockRoutines.some(r => r.section_id === parseInt(body.section_id) && !r.is_owner);
+    if (alreadyEnrolled) {
+      return NextResponse.json({ error: "You are already enrolled in this section." }, { status: 409 });
+    }
+
     // Student logic: Find the master routine scheduled by the teacher
     const masterRoutine = mockRoutines.find(r => r.section_id === parseInt(body.section_id) && r.is_owner);
     if (!masterRoutine) {
@@ -49,6 +55,28 @@ export async function POST(req: Request) {
     
     mockRoutines.push(studentRoutine);
     return NextResponse.json({ success: true, routine: studentRoutine });
+  }
+
+  // Audit check 2: Teacher time conflict
+  const hasConflict = mockRoutines.some(r => 
+    r.is_owner && 
+    r.day_of_week === body.day_of_week && 
+    ((body.start_time >= r.start_time && body.start_time < r.end_time) || 
+     (body.end_time > r.start_time && body.end_time <= r.end_time))
+  );
+
+  if (hasConflict) {
+    const conflictSlot = mockRoutines.find(r => r.day_of_week === body.day_of_week)!;
+    return NextResponse.json({ 
+      error: "Time conflict detected", 
+      conflict: {
+        course_code: conflictSlot.course_code,
+        section_id: conflictSlot.section_id,
+        day_of_week: conflictSlot.day_of_week,
+        start_time: conflictSlot.start_time,
+        end_time: conflictSlot.end_time
+      } 
+    }, { status: 409 });
   }
 
   // Teacher / Admin logic: Schedule the new class slot

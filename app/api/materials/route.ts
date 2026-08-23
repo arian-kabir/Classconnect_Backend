@@ -43,16 +43,18 @@ export async function POST(req: Request) {
 
   // Find the section to append to
   const section = mockData.sections.find(s => s.section_id === sectionId);
-  if (section) {
-    section.materials.push({
-      note_id: Date.now(),
-      title: title as string,
-      uploader_name: "Current User", // Mock user
-      created_at: new Date().toISOString(),
-      text_content: `File: ${file ? (file as File).name : 'none'}`
-    });
-    mockData.total_materials++;
+  if (!section) {
+    return NextResponse.json({ error: "The specified section could not be found." }, { status: 400 });
   }
+
+  section.materials.push({
+    note_id: Date.now(),
+    title: title as string,
+    uploader_name: "Current User", // Mock user
+    created_at: new Date().toISOString(),
+    text_content: `File: ${file ? (file as File).name : 'none'}`
+  });
+  mockData.total_materials++;
 
   return NextResponse.json({ success: true });
 }
