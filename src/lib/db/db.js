@@ -3,22 +3,33 @@ import mysql from 'mysql2/promise';
 
 let pool = null;
 
+function getPool() {
+  if (!pool) {
+    const host = process.env.DB_HOST || 'localhost';
+    const port = parseInt(process.env.DB_PORT || '3306', 10);
+    const isSSL = process.env.DB_SSL === 'true' || port === 4000 || host.includes('tidbcloud.com');
+
+    pool = mysql.createPool({
+      host: host,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'classconnectdb',
+      port: port,
+      ssl: isSSL ? { minVersion: 'TLSv1.2', rejectUnauthorized: true } : undefined,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+    });
+  }
+  return pool;
+}
+
 export async function query(sql, params = []) {
   try {
-    if (!pool) {
-      pool = mysql.createPool({
-        host: process.env.DB_HOST || 'localhost',
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'classconnect_db',
-        port: parseInt(process.env.DB_PORT || '3306'),
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-      });
-    }
-
-    const [rows] = await pool.query(sql, params);
+    const p = getPool();
+    const [rows] = await p.query(sql, params);
     return rows;
   } catch (error) {
     console.error('Database query error:', error);
@@ -27,18 +38,8 @@ export async function query(sql, params = []) {
 }
 
 export async function getConnection() {
-  if (!pool) {
-    pool = mysql.createPool({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'classconnect_db',
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-    });
-  }
-  return pool.getConnection();
+  const p = getPool();
+  return p.getConnection();
 }
 
-export default { query, getConnection };
+export default { query, getConnection };
