@@ -35,7 +35,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "src/app/api/canvas/share/route.js"  ],
+, "src/app/api/canvas/share/route.ts", "src/app/api/canvas/route.js"  ],
   "exclude": [
     "node_modules"
   ]

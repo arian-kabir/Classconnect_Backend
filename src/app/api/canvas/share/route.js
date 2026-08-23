@@ -16,18 +16,14 @@ export async function GET(request) {
             );
         }
 
-        // Get users who share any section with the note owner
+        // Simple query without already_shared
         const users = await query(`
             SELECT DISTINCT 
                 u.user_id,
                 u.full_name,
                 u.email,
                 u.role,
-                u.profile_picture,
-                CASE 
-                    WHEN ns.shared_with_user_id IS NOT NULL THEN 1 
-                    ELSE 0 
-                END as already_shared
+                u.profile_picture
             FROM users u
             JOIN section_enrollments se ON se.student_id = u.user_id
             WHERE se.section_id IN (
@@ -40,11 +36,7 @@ export async function GET(request) {
                 u.full_name,
                 u.email,
                 u.role,
-                u.profile_picture,
-                CASE 
-                    WHEN ns.shared_with_user_id IS NOT NULL THEN 1 
-                    ELSE 0 
-                END as already_shared
+                u.profile_picture
             FROM users u
             JOIN sections s ON s.teacher_id = u.user_id
             WHERE s.section_id IN (
@@ -58,12 +50,11 @@ export async function GET(request) {
     } catch (error) {
         console.error('Error fetching shareable users:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch shareable users' },
+            { error: error.message, users: [] },
             { status: 500 }
         );
     }
 }
-
 // POST: Share a note with users
 export async function POST(request) {
     try {
@@ -116,7 +107,7 @@ export async function POST(request) {
                 VALUES (?, ?, ?, ?, ?)
             `, [
                 `[Shared] ${note.title}`,
-                note.content,
+                JSON.stringify(note.content), 
                 note.text_content ? `Shared from ${ownerId}:\n${note.text_content}` : '',
                 sharedUserId,
                 note.section_id

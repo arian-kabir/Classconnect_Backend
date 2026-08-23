@@ -197,7 +197,7 @@ export async function PUT(request, { params }) {
             success: true,
             data: {
                 ...updatedNote[0],
-                content: updatedNote[0]?.content ? JSON.parse(updatedNote[0].content) : null
+                content: updatedNote[0]?.content ? (typeof updatedNote[0].content === 'string' ? JSON.parse(updatedNote[0].content) : updatedNote[0].content) : null
             },
             message: 'Note updated successfully'
         });
