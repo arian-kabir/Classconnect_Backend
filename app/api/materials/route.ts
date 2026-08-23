@@ -34,5 +34,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  return NextResponse.json({ success: true });
+  // Parse the multipart form data sent by the frontend
+  const formData = await req.formData();
+  const file = formData.get('file');
+  const title = formData.get('title');
+  const sectionId = formData.get('section_id');
+
+  console.log(`Mocking upload for file: ${file ? (file as File).name : 'none'} to section ${sectionId}`);
+
+  return NextResponse.json({ success: true, uploaded_title: title });
 }

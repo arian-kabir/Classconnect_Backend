@@ -86,17 +86,18 @@ export default function MaterialPipelineBoard() {
     setUploadError(null);
 
     try {
-      // Mocking file upload since this goes to the same JSON API for now.
-      // In a real production system, this would use FormData and multipart/form-data
-      // sending to an S3 or Google Drive API as specified in the architecture.
+      // Use actual FormData for multipart/form-data upload.
+      // This perfectly aligns with a production backend expecting binary file streams.
+      const formData = new FormData();
+      formData.append('section_id', sectionId.toString());
+      formData.append('title', uploadTitle.trim());
+      formData.append('file', selectedFile);
+
       const res = await fetch('/api/materials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          section_id: sectionId,
-          title: uploadTitle.trim(),
-          text_content: `File Attached: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`,
-        }),
+        // Note: Do NOT set Content-Type header manually when sending FormData.
+        // The browser automatically sets it to multipart/form-data with the correct boundary.
+        body: formData,
       });
 
       if (!res.ok) {
