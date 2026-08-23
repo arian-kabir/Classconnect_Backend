@@ -21,9 +21,16 @@ let mockRoutines: RoutineEntry[] = [
 ];
 
 export async function GET() {
-  // In a real app, GET returns routines based on the user's role and enrollments.
-  // We'll return everything here for demo purposes so it populates the UI.
-  return NextResponse.json(mockRoutines);
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as any)?.role || 'student';
+  
+  if (role === 'student') {
+    // Students only see their own enrolled classes (is_owner: false)
+    return NextResponse.json(mockRoutines.filter(r => !r.is_owner));
+  }
+  
+  // Teachers and Admins can see the global master timetable
+  return NextResponse.json(mockRoutines.filter(r => r.is_owner));
 }
 
 export async function POST(req: Request) {

@@ -193,7 +193,7 @@ export default function WeeklyTimetable({
                               <span className="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 whitespace-nowrap font-medium">
                                 Sec {course.section_id}
                               </span>
-                              {onDelete && course.is_owner && (
+                              {onDelete && (
                                 <button
                                   onClick={() => onDelete(course.routine_id as unknown as number)}
                                   className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 p-0.5 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
