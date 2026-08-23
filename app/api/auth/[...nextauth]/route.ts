@@ -31,6 +31,19 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required.');
         }
 
+        // --- LOCAL DEVELOPMENT BYPASS ---
+        // Allows testing roles instantly from the UI when backend is offline
+        if (credentials.email === 'teacher@bracu.ac.bd' && credentials.password === 'teacher') {
+          return { id: "101", name: "Dr. Sarah Chen", email: credentials.email, role: "teacher" };
+        }
+        if (credentials.email === 'admin@bracu.ac.bd' && credentials.password === 'admin') {
+          return { id: "999", name: "Super Admin", email: credentials.email, role: "admin" };
+        }
+        if (credentials.email === 'student@bracu.ac.bd' && credentials.password === 'student') {
+          return { id: "202", name: "Arian Kabir", email: credentials.email, role: "student" };
+        }
+        // --------------------------------
+
         try {
           const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
             method: 'POST',
@@ -55,7 +68,7 @@ export const authOptions: NextAuthOptions = {
             role: data.user.role,
           };
         } catch (err: any) {
-          throw new Error(err.message || 'Authentication failed.');
+          throw new Error(err.message || 'Authentication failed (backend offline?). Try using test credentials: teacher@bracu.ac.bd / teacher');
         }
       },
     }),
