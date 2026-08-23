@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { RoutineEntry } from '@/types/index';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // In-memory database for local testing
 let mockRoutines: RoutineEntry[] = [
@@ -14,42 +16,86 @@ let mockRoutines: RoutineEntry[] = [
     section_code: "1",
     section_id: 1,
     teacher_name: "Dr. Sarah Chen",
-    is_owner: true
+    is_owner: true // True because Sarah Chen is the teacher who created it
   } as RoutineEntry
 ];
 
 export async function GET() {
+  // In a real app, GET returns routines based on the user's role and enrollments.
+  // We'll return everything here for demo purposes so it populates the UI.
   return NextResponse.json(mockRoutines);
 }
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as any)?.role || 'student';
+  const userName = session?.user?.name || 'Current User';
   const body = await req.json();
-  
-  // Simulate backend logic inserting into DB
+
+  if (role === 'student') {
+    // Student logic: Find the master routine scheduled by the teacher
+    const masterRoutine = mockRoutines.find(r => r.section_id === parseInt(body.section_id) && r.is_owner);
+    if (!masterRoutine) {
+      return NextResponse.json({ error: "No teacher has scheduled this section yet." }, { status: 400 });
+    }
+    
+    // Auto-fetch and clone the slot for the student
+    const studentRoutine = {
+      ...masterRoutine,
+      routine_id: Date.now(), // Unique ID for student's enrollment record
+      is_owner: false, // Students don't own the class block
+      teacher_name: masterRoutine.teacher_name
+    } as unknown as RoutineEntry;
+    
+    mockRoutines.push(studentRoutine);
+    return NextResponse.json({ success: true, routine: studentRoutine });
+  }
+
+  // Teacher / Admin logic: Schedule the new class slot
   const newRoutine = {
-    routine_id: Date.now(), // Mock auto-increment ID
+    routine_id: Date.now(),
     day_of_week: body.day_of_week,
     start_time: body.start_time,
     end_time: body.end_time,
     room_number: body.room_number,
-    course_code: "NEW", // Mock
-    course_name: "Newly Added Course", // Mock
-    section_code: "1", // Mock
-    section_id: body.section_id,
-    teacher_name: "Current User",
-    is_owner: true
+    course_code: "NEW", 
+    course_name: "Newly Added Course", 
+    section_code: "1", 
+    section_id: parseInt(body.section_id),
+    teacher_name: userName,
+    is_owner: true // Teachers own the slots they create
   } as unknown as RoutineEntry;
 
   mockRoutines.push(newRoutine);
-
   return NextResponse.json({ success: true, routine: newRoutine });
 }
 
 export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as any)?.role || 'student';
+  const userName = session?.user?.name || 'Current User';
+
   const { searchParams } = new URL(req.url);
   const routineIdStr = searchParams.get('routine_id');
+  
   if (routineIdStr) {
-    mockRoutines = mockRoutines.filter(r => r.routine_id !== parseInt(routineIdStr));
+    const routineId = parseInt(routineIdStr);
+    const routineToDelete = mockRoutines.find(r => r.routine_id === routineId);
+    
+    if (routineToDelete) {
+      // 1. Admins have absolute privileges
+      // 2. Teachers can only delete their OWN routines
+      // 3. Students can only drop their own enrollment (where is_owner is false)
+      const isAdmin = role === 'admin';
+      const isTeacherOwner = role === 'teacher' && routineToDelete.teacher_name === userName;
+      const isStudentDropping = role === 'student' && !routineToDelete.is_owner;
+      
+      if (isAdmin || isTeacherOwner || isStudentDropping) {
+        mockRoutines = mockRoutines.filter(r => r.routine_id !== routineId);
+      } else {
+        return NextResponse.json({ error: "Unauthorized to modify this routine." }, { status: 403 });
+      }
+    }
   }
   return NextResponse.json({ success: true });
 }

@@ -205,28 +205,31 @@ export default function RoutineBuilder() {
       return;
     }
 
-    // Normalize both times to HH:MM before comparison (fixes mixed-format issue)
-    const normalizedStart = normalizeTime(current.start_time);
-    const normalizedEnd   = normalizeTime(current.end_time);
-
-    if (!normalizedStart || !normalizedEnd) {
-      setError("Please enter both start and end times.");
-      return;
-    }
-
-    if (normalizedStart >= normalizedEnd) {
-      setError("Start time must be strictly before end time.");
-      return;
-    }
-
     // Build the exact payload that will be sent
-    const payload = {
-      section_id:  current.section_id,
-      day_of_week: current.day_of_week,
-      start_time:  normalizedStart,   // Always HH:MM — never HH:MM:SS
-      end_time:    normalizedEnd,      // Always HH:MM — never HH:MM:SS
-      room_number: current.room_number || null,
+    const payload: any = {
+      section_id: current.section_id,
     };
+
+    // Teachers/Admins must provide and validate times
+    if (!isStudent) {
+      const normalizedStart = normalizeTime(current.start_time);
+      const normalizedEnd   = normalizeTime(current.end_time);
+
+      if (!normalizedStart || !normalizedEnd) {
+        setError("Please enter both start and end times.");
+        return;
+      }
+
+      if (normalizedStart >= normalizedEnd) {
+        setError("Start time must be strictly before end time.");
+        return;
+      }
+
+      payload.day_of_week = current.day_of_week;
+      payload.start_time = normalizedStart;
+      payload.end_time = normalizedEnd;
+      payload.room_number = current.room_number || null;
+    }
 
     // DEV-ONLY: log exact payload for network debugging
     if (process.env.NODE_ENV === 'development') {
