@@ -92,6 +92,7 @@ function normalizeTime(t: string): string {
 }
 
 import { mutate } from 'swr';
+import { Search } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -346,26 +347,33 @@ export default function RoutineBuilder() {
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
 
+          {/* Full-width Search Bar */}
+          <div className="flex flex-col gap-1.5 mb-4">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+              Find Course
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by course code or name (e.g., CSE471)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 h-9 text-sm border rounded-md border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white placeholder:text-slate-400 shadow-sm"
+              />
+            </div>
+          </div>
+
           {/* ── Row 1: Course + Section ──────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
             {/* Course picker */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label
-                  htmlFor="course-select"
-                  className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300"
-                >
-                  Course <span className="text-red-500" aria-hidden="true">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search course..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="text-xs h-6 px-2 w-28 border rounded border-slate-200 outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
-                />
-              </div>
+              <label
+                htmlFor="course-select"
+                className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300"
+              >
+                Course <span className="text-red-500" aria-hidden="true">*</span>
+              </label>
               <Select
                 value={selectedCourseId || undefined}
                 onValueChange={(val) => {

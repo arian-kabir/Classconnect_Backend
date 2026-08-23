@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { RoutineEntry } from '@/types';
+import type { RoutineEntry } from '@/types/index';
 
 // In-memory database for local testing
 let mockRoutines: RoutineEntry[] = [
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   
   // Simulate backend logic inserting into DB
-  const newRoutine: RoutineEntry = {
+  const newRoutine = {
     routine_id: Date.now(), // Mock auto-increment ID
     day_of_week: body.day_of_week,
     start_time: body.start_time,
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     section_id: body.section_id,
     teacher_name: "Current User",
     is_owner: true
-  };
+  } as unknown as RoutineEntry;
 
   mockRoutines.push(newRoutine);
 
