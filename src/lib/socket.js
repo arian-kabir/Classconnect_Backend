@@ -1,6 +1,5 @@
 // backend/src/lib/socket.js
 import { Server } from 'socket.io';
-import { createServer } from 'http';
 import { query } from './db/db.js';
 
 let io = null;
@@ -8,15 +7,14 @@ let io = null;
 export function initSocket(server) {
     if (io) return io;
 
-    const httpServer = createServer(server);
-    io = new Server(httpServer, {
+    io = new Server(server, {
         cors: {
             origin: "http://localhost:3000",
             methods: ["GET", "POST"],
             credentials: true
         }
     });
-
+    
     io.on('connection', (socket) => {
         console.log('User connected:', socket.id);
 
@@ -32,6 +30,7 @@ export function initSocket(server) {
             // Broadcast to others in the room
             socket.to(`room-${roomId}`).emit('user-joined', { userId });
         });
+
 
         // Handle sending messages
         socket.on('send-message', async (data) => {

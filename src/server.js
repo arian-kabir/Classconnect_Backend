@@ -13,7 +13,6 @@ app.prepare().then(() => {
         const parsedUrl = parse(req.url, true);
         handle(req, res, parsedUrl);
     });
-
     // Initialize Socket.IO
     const io = initSocket(server);
 

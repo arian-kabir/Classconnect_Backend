@@ -1,5 +1,5 @@
 // app/api/chat/rooms/route.js
-import pool from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -15,7 +15,7 @@ export async function GET(request) {
         }
         
         // Get all chat rooms for a user (sections they're enrolled in or teaching)
-        const [rooms] = await pool.query(`
+        const rooms = await query(`
         SELECT DISTINCT 
                 cr.room_id,
                 cr.room_name,

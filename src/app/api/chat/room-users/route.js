@@ -1,5 +1,5 @@
 // app/api/chat/room-users/route.js
-import pool from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -14,7 +14,7 @@ export async function GET(request) {
             );
         }
 
-        const [users] = await pool.query(`
+        const users = await query(`
             SELECT DISTINCT
                 u.user_id,
                 u.full_name,

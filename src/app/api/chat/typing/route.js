@@ -1,5 +1,5 @@
 // app/api/chat/typing/route.js
-import pool from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -14,7 +14,7 @@ export async function POST(request) {
             );
         }
 
-        await pool.query(`
+        await query(`
             INSERT INTO typing_status (room_id, user_id, is_typing)
             VALUES (?, ?, ?)
             ON DUPLICATE KEY UPDATE 
