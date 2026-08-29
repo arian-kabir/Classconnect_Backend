@@ -128,10 +128,10 @@ export async function POST(request) {
         } = body;
 
         // Validation
-        if (!title || !user_id || !section_id) {
-            console.log('Validation failed:', { title, user_id, section_id });
+        if (!title || !user_id) {
+            console.log('Validation failed:', { title, user_id});
             return NextResponse.json(
-                { success: false, error: 'title, user_id, and section_id are required' },
+                { success: false, error: 'title and user_id are required' },
                 { status: 400 }
             );
         }
@@ -141,13 +141,12 @@ export async function POST(request) {
             INSERT INTO notes (title, content, text_content, user_id, section_id)
             VALUES (?, ?, ?, ?, ?)
         `;
-        
         const insertParams = [
             title,
             content ? JSON.stringify(content) : null,
             text_content || '',
             parseInt(user_id),
-            parseInt(section_id)
+            section_id ? parseInt(section_id) : null
         ];
         
         console.log('Insert SQL:', insertSql);
