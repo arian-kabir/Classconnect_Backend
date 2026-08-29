@@ -1,25 +1,19 @@
 /**
  * sheets.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * Singleton Google Sheets API client.
+ * Singleton Google Sheets API client (Read & Write).
  *
  * Supports two authentication strategies (tried in order):
  *
  *   1. Service Account JSON file  (GOOGLE_SHEETS_SERVICE_ACCOUNT_PATH)
  *      Place the downloaded JSON key at the path relative to the project root.
  *      e.g.  config/service-account.json
- *      Make sure the spreadsheet is shared with the service account email.
+ *      Make sure the spreadsheet is shared with the service account email as Editor.
  *
  *   2. API Key  (GOOGLE_SHEETS_API_KEY)
- *      Works only for publicly shared spreadsheets (no email share needed).
+ *      Works for reading publicly shared spreadsheets.
  *
  *   3. Base64-encoded service account (GOOGLE_SERVICE_ACCOUNT_KEY) — legacy
- *      Kept for backward compatibility.
- *
- * Usage:
- *   import { readSheet } from "@/lib/sheets";
- *   const rows = await readSheet();          // uses env vars for ID + range
- *   const rows = await readSheet(id, range); // explicit override
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -32,7 +26,7 @@ let _sheetsClient: sheets_v4.Sheets | null = null;
 
 /**
  * Returns (and lazily initialises) the authenticated Sheets client.
- * Priority: service-account file → API key → base64 service account key.
+ * Scope is full `https://www.googleapis.com/auth/spreadsheets` for read + write.
  */
 function getSheetsClient(): sheets_v4.Sheets {
   if (_sheetsClient) return _sheetsClient;
@@ -67,11 +61,11 @@ function getSheetsClient(): sheets_v4.Sheets {
         const credentials = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
         const auth = new google.auth.GoogleAuth({
           credentials,
-          scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+          scopes: ["https://www.googleapis.com/auth/spreadsheets"],
         });
         _sheetsClient = google.sheets({ version: "v4", auth });
         console.log(
-          "[sheets.ts] Authenticated via service account file:",
+          "[sheets.ts] Authenticated (Read/Write) via service account file:",
           absolutePath
         );
         return _sheetsClient;
@@ -88,11 +82,11 @@ function getSheetsClient(): sheets_v4.Sheets {
     }
   }
 
-  // ── Strategy 2: API Key (public sheets only) ────────────────────────────
+  // ── Strategy 2: API Key (public read-only) ──────────────────────────────
   const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
   if (apiKey && apiKey.trim() !== "") {
     _sheetsClient = google.sheets({ version: "v4" });
-    (global as any).__sheetsApiKey = apiKey; // store for query-time use
+    (global as any).__sheetsApiKey = apiKey;
     console.log("[sheets.ts] Authenticated via API key.");
     return _sheetsClient;
   }
@@ -109,7 +103,7 @@ function getSheetsClient(): sheets_v4.Sheets {
       const credentials = JSON.parse(json);
       const auth = new google.auth.GoogleAuth({
         credentials,
-        scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
       });
       _sheetsClient = google.sheets({ version: "v4", auth });
       console.log("[sheets.ts] Authenticated via base64 service account key.");
@@ -134,11 +128,6 @@ function getSheetsClient(): sheets_v4.Sheets {
 
 /**
  * Reads a range from a Google Spreadsheet and returns raw cell values.
- *
- * If spreadsheetId / range are omitted, falls back to env vars:
- *   ROUTINE_SHEET_ID  and  ROUTINE_SHEET_RANGE
- *
- * @returns A 2-D array of string values. Empty / missing cells are "".
  */
 export async function readSheet(
   spreadsheetId?: string,
@@ -147,7 +136,7 @@ export async function readSheet(
   const id =
     spreadsheetId ||
     process.env.ROUTINE_SHEET_ID ||
-    process.env.ROUTINE_SPREADSHEET_ID; // legacy fallback
+    process.env.ROUTINE_SPREADSHEET_ID;
 
   const r =
     range ||
@@ -174,12 +163,54 @@ export async function readSheet(
 
   const rawRows = response.data.values ?? [];
 
-  // Normalise: ensure every cell is a trimmed string
   return rawRows.map((row) =>
     (row as unknown[]).map((cell) =>
       cell === null || cell === undefined ? "" : String(cell).trim()
     )
   );
+}
+
+/**
+ * Appends a single row of routine values to the master Google Sheet.
+ * Values format: [Course (Col A), Sec (Col B), Room (Col C), Day (Col D), Time (Col E), Teacher (Col F)]
+ * e.g. ["CSE471", "01", "UB80201", "Sunday", "09:30-11:00", "AQU"]
+ */
+export async function appendSheetRow(
+  spreadsheetId: string,
+  sheetName: string = "Sheet1",
+  rowValues: string[]
+): Promise<{ ok: boolean; updatedRange?: string; error?: string }> {
+  try {
+    const id = spreadsheetId || process.env.ROUTINE_SHEET_ID || process.env.ROUTINE_SPREADSHEET_ID;
+    if (!id) {
+      return { ok: false, error: "No spreadsheet ID provided" };
+    }
+
+    const sheets = getSheetsClient();
+    const cleanSheet = sheetName.replace(/!.*$/, "");
+    const range = `${cleanSheet}!A:F`;
+
+    const res = await sheets.spreadsheets.values.append({
+      spreadsheetId: id,
+      range,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: {
+        values: [rowValues],
+      },
+    });
+
+    return {
+      ok: true,
+      updatedRange: res.data.updates?.updatedRange ?? undefined,
+    };
+  } catch (err: any) {
+    console.error("[sheets.ts] appendSheetRow error:", err);
+    return {
+      ok: false,
+      error: err.message || "Failed to append row to Google Sheet",
+    };
+  }
 }
 
 /**
