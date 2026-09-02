@@ -149,10 +149,10 @@ export default function CrossFacultyCoordination({ courseId }: { courseId: numbe
                 <h4 className="font-bold text-slate-900 text-sm">Midterm Question Moderation</h4>
                 <Badge className="bg-amber-50 text-amber-700 border-amber-200 shadow-none hover:bg-amber-50">Voting</Badge>
               </div>
-              <p className="text-xs font-medium text-slate-500 mb-4 flex items-center gap-1.5">
+              <div className="text-xs font-medium text-slate-500 mb-4 flex items-center gap-1.5">
                 <div className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600">SC</div>
                 Proposed by Dr. Sarah Chen
-              </p>
+              </div>
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 hover:border-indigo-100 transition-colors group">
