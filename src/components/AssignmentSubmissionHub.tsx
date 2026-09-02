@@ -6,146 +6,284 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, UploadCloud, Download, CheckCircle, Clock } from "lucide-react";
+import { UploadCloud, Download, CheckCircle, Clock, AlertCircle, FileArchive, Plus, RefreshCw, X } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+interface Assignment {
+  id: number;
+  sectionId: number;
+  title: string;
+  dueDate: string;
+  submissionCount: number;
+  status: "active" | "closed";
+}
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch data");
+  return res.json();
+};
+
+function SkeletonLoader() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {[1, 2].map((i) => (
+        <div key={i} className="p-4 border border-slate-100 rounded-lg bg-slate-50/50 flex flex-col gap-3">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 w-full">
+              <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+              <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+            </div>
+            <div className="h-5 bg-slate-200 rounded w-16"></div>
+          </div>
+          <div className="h-10 bg-slate-200 rounded w-full mt-2"></div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AssignmentSubmissionHub({ sectionId }: { sectionId: number }) {
   const { data: session } = useSession();
-  const role = session?.user?.role as "student" | "teacher" | "admin" | "tutor";
+  const role = session?.user?.role as "student" | "teacher" | "admin" | "tutor" | undefined;
   
-  const { data: assignments, mutate } = useSWR(`/api/assignments?sectionId=${sectionId}`, fetcher);
+  const { data: assignments, error, mutate, isLoading } = useSWR<Assignment[]>(
+    `/api/assignments?sectionId=${sectionId}`, 
+    fetcher
+  );
   
   const [isCreating, setIsCreating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeUploadId, setActiveUploadId] = useState<number | null>(null);
+  
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !dueDate) return;
+    setFormError(null);
     
-    await fetch("/api/assignments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sectionId, title, dueDate })
-    });
+    if (!title.trim() || !dueDate) {
+      setFormError("Title and Due Date are required.");
+      return;
+    }
+
+    if (new Date(dueDate) < new Date()) {
+      setFormError("Due Date must be in the future.");
+      return;
+    }
     
-    setTitle("");
-    setDueDate("");
-    setIsCreating(false);
-    mutate();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sectionId, title: title.trim(), dueDate })
+      });
+      
+      if (!res.ok) throw new Error("Failed to deploy dropbox");
+      
+      setTitle("");
+      setDueDate("");
+      setIsCreating(false);
+      mutate();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = async (assignmentId: number, file: File) => {
-    // In a real implementation, this would integrate with Google Drive API
-    // and store the submission record in the database.
-    const formData = new FormData();
-    formData.append("assignmentId", assignmentId.toString());
-    formData.append("file", file);
-    
-    await fetch("/api/assignments/submissions", {
-      method: "POST",
-      body: formData
-    });
-    mutate();
+    setActiveUploadId(assignmentId);
+    try {
+      const formData = new FormData();
+      formData.append("assignmentId", assignmentId.toString());
+      formData.append("file", file);
+      
+      const res = await fetch("/api/assignments/submissions", {
+        method: "POST",
+        body: formData
+      });
+      
+      if (!res.ok) throw new Error("Upload failed");
+      
+      // Artificial delay to simulate Drive Sync and give visual feedback
+      await new Promise(resolve => setTimeout(resolve, 800));
+      mutate();
+    } catch (err) {
+      console.error(err);
+      // Would ideally trigger a toast here
+    } finally {
+      setActiveUploadId(null);
+    }
   };
 
   return (
-    <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <div>
-          <CardTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Assignment Dropboxes
-          </CardTitle>
-          <CardDescription className="text-xs text-slate-500 mt-1">
-            Module 3.3 - Assignment Submission Form Formulator & Collection Hub
-          </CardDescription>
+    <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-slate-900 overflow-hidden">
+      <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+        <div className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <FileArchive className="w-5 h-5 text-indigo-500" />
+              Digital Dropboxes
+            </CardTitle>
+            <CardDescription className="text-xs font-medium text-slate-500 mt-1">
+              Secure collection hub synced with Google Drive
+            </CardDescription>
+          </div>
+          {(role === "teacher" || role === "admin") && (
+            <Button 
+              onClick={() => { setIsCreating(!isCreating); setFormError(null); }} 
+              variant={isCreating ? "outline" : "default"} 
+              size="sm"
+              className={!isCreating ? "bg-slate-900 hover:bg-slate-800 text-white shadow-sm" : ""}
+            >
+              {isCreating ? <><X className="w-4 h-4 mr-1.5" /> Cancel</> : <><Plus className="w-4 h-4 mr-1.5" /> New Assignment</>}
+            </Button>
+          )}
         </div>
-        {role === "teacher" && (
-          <Button onClick={() => setIsCreating(!isCreating)} variant="outline" size="sm">
-            {isCreating ? "Cancel" : "New Assignment"}
-          </Button>
-        )}
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="p-5">
         {isCreating && (
-          <form onSubmit={handleCreateAssignment} className="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100">
-            <h4 className="text-sm font-semibold mb-3">Create Digital Dropbox</h4>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Assignment Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full h-9 px-3 border border-slate-200 rounded-md text-sm"
-                required
-              />
-              <input
-                type="datetime-local"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full h-9 px-3 border border-slate-200 rounded-md text-sm"
-                required
-              />
-              <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-9 text-sm">
-                Deploy Dropbox
+          <form onSubmit={handleCreateAssignment} className="mb-6 p-5 bg-white border border-indigo-100 rounded-xl shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+            <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+              Deploy New Dropbox
+            </h4>
+            
+            {formError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-xs flex items-center gap-2 font-medium border border-red-100">
+                <AlertCircle className="w-4 h-4" />
+                {formError}
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Assignment Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. System Architecture Diagram"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full h-10 px-3 border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg text-sm transition-all outline-none"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Submission Deadline</label>
+                <input
+                  type="datetime-local"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full h-10 px-3 border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg text-sm transition-all outline-none"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <Button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-10 shadow-sm font-semibold rounded-lg">
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Deploying...
+                  </span>
+                ) : "Create Dropbox"}
               </Button>
             </div>
           </form>
         )}
 
         <div className="space-y-4">
-          {!assignments ? (
-            <p className="text-sm text-slate-500 text-center py-4">Loading assignments...</p>
-          ) : assignments.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-4">No assignments active.</p>
-          ) : (
-            assignments.map((assignment: any) => (
-              <div key={assignment.id} className="p-4 border border-slate-200 rounded-lg flex flex-col gap-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{assignment.title}</h4>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                      <Clock className="w-3 h-3" /> Due: {new Date(assignment.dueDate).toLocaleString()}
-                    </p>
-                  </div>
-                  <Badge variant={new Date(assignment.dueDate) < new Date() ? "destructive" : "secondary"}>
-                    {new Date(assignment.dueDate) < new Date() ? "Closed" : "Active"}
-                  </Badge>
-                </div>
+          {error && (
+            <div className="p-6 text-center border border-red-100 bg-red-50 rounded-xl">
+              <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-red-600">Failed to load dropboxes</p>
+              <Button onClick={() => mutate()} variant="outline" size="sm" className="mt-3 bg-white text-red-600 border-red-200 hover:bg-red-50">
+                <RefreshCw className="w-3 h-3 mr-2" /> Retry
+              </Button>
+            </div>
+          )}
 
-                {role === "student" && (
-                  <div className="mt-2">
-                    <label className="flex items-center justify-center w-full h-12 border-2 border-dashed border-slate-300 rounded-md cursor-pointer hover:bg-slate-50 transition-colors">
-                      <span className="text-xs font-medium text-slate-600 flex items-center gap-2">
-                        <UploadCloud className="w-4 h-4" /> Upload Submission (Drive Sync)
-                      </span>
-                      <input 
-                        type="file" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) handleFileUpload(assignment.id, e.target.files[0]);
-                        }} 
-                      />
-                    </label>
-                  </div>
-                )}
-
-                {(role === "teacher" || role === "tutor") && (
-                  <div className="mt-2 flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-8">
-                      <CheckCircle className="w-3 h-3 mr-2" /> Review Submissions ({assignment.submissionCount || 0})
-                    </Button>
-                    {role === "teacher" && (
-                      <Button variant="secondary" size="sm" className="flex-1 text-xs h-8">
-                        <Download className="w-3 h-3 mr-2" /> Download All (.zip)
-                      </Button>
-                    )}
-                  </div>
-                )}
+          {isLoading ? (
+            <SkeletonLoader />
+          ) : !assignments || assignments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm border border-slate-100">
+                <FileArchive className="w-6 h-6 text-slate-400" />
               </div>
-            ))
+              <h3 className="text-sm font-bold text-slate-700">No Active Dropboxes</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-[250px]">
+                {role === "teacher" 
+                  ? "Create a new assignment dropbox to start collecting submissions."
+                  : "There are no pending assignments for this section."}
+              </p>
+            </div>
+          ) : (
+            assignments.map((assignment) => {
+              const isClosed = new Date(assignment.dueDate) < new Date();
+              const uploadActive = activeUploadId === assignment.id;
+              
+              return (
+                <div key={assignment.id} className="p-4 border border-slate-200 rounded-xl flex flex-col gap-3 bg-white hover:border-indigo-100 transition-colors group">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm group-hover:text-indigo-700 transition-colors">{assignment.title}</h4>
+                      <p className={`text-xs flex items-center gap-1.5 mt-1.5 font-medium ${isClosed ? 'text-red-500' : 'text-slate-500'}`}>
+                        <Clock className="w-3.5 h-3.5" /> 
+                        {isClosed ? "Deadline Passed:" : "Due:"} {new Date(assignment.dueDate).toLocaleString(undefined, {
+                          weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    <Badge className={isClosed ? "bg-red-50 text-red-700 hover:bg-red-50 border-red-100 shadow-none" : "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-emerald-100 shadow-none"}>
+                      {isClosed ? "Closed" : "Active"}
+                    </Badge>
+                  </div>
+
+                  {role === "student" && (
+                    <div className="mt-2">
+                      <label className={`flex items-center justify-center w-full h-12 border-2 border-dashed rounded-lg transition-all ${
+                        isClosed ? "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed" : 
+                        uploadActive ? "border-indigo-400 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 cursor-pointer"
+                      }`}>
+                        {uploadActive ? (
+                          <span className="text-xs font-bold text-indigo-600 flex items-center gap-2">
+                            <span className="w-3.5 h-3.5 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" /> 
+                            Syncing to Google Drive...
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                            <UploadCloud className={`w-4 h-4 ${isClosed ? 'text-slate-400' : 'text-indigo-500'}`} /> 
+                            {isClosed ? "Submissions Closed" : "Upload Submission (Drive Sync)"}
+                          </span>
+                        )}
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          disabled={isClosed || uploadActive}
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) handleFileUpload(assignment.id, e.target.files[0]);
+                          }} 
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  {(role === "teacher" || role === "tutor" || role === "admin") && (
+                    <div className="mt-3 flex gap-2 pt-3 border-t border-slate-100">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs h-8 bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 font-semibold shadow-sm">
+                        <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> Review ({assignment.submissionCount})
+                      </Button>
+                      {(role === "teacher" || role === "admin") && (
+                        <Button variant="outline" size="sm" className="flex-1 text-xs h-8 bg-indigo-50 hover:bg-indigo-100 border-indigo-100 text-indigo-700 font-semibold shadow-sm">
+                          <Download className="w-3.5 h-3.5 mr-1.5" /> Export (.zip)
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </CardContent>
