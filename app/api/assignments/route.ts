@@ -68,6 +68,8 @@ export async function POST(req: Request) {
 
     const role = (session?.user as any)?.role;
     
+    // Zero-Trust RBAC (Phase 2): Only Teachers and Admins can create dropboxes. 
+    // Tutors and Student Tutors are strictly blocked (Read-only access).
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json({ error: "Forbidden: Only teachers and admins can deploy dropboxes." }, { status: 403 });
     }

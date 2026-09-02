@@ -39,6 +39,22 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search')?.toLowerCase().trim() ?? '';
 
+  /**
+   * MICRO-COHERENCE (Phase 1): Provisioning Lockout (M1.1 Coherence)
+   * Students cannot add a section to their routine if Faria's Spreadsheet Intake has not seeded 
+   * the timeslots, or if a Teacher is not allocated. 
+   * 
+   * PRODUCTION SQL QUERY:
+   * SELECT c.course_id, c.course_code, c.course_name, s.section_id, s.section_code, u.full_name AS teacher_name
+   * FROM courses c
+   * JOIN sections s ON c.course_id = s.course_id
+   * JOIN routines r ON r.section_id = s.section_id
+   * LEFT JOIN users u ON s.teacher_id = u.user_id
+   * WHERE s.teacher_id IS NOT NULL 
+   *   AND r.is_owner = TRUE
+   *   AND (c.course_code LIKE ? OR c.course_name LIKE ?);
+   */
+
   const courses = search
     ? ALL_COURSES.filter(c =>
         c.course_code.toLowerCase().includes(search) ||
@@ -46,5 +62,11 @@ export async function GET(req: Request) {
       )
     : ALL_COURSES;
 
-  return NextResponse.json(courses);
+  // Enforce Provisioning Lockout: filter out sections with no teacher allocated
+  const sanitizedCourses = courses.map(c => ({
+    ...c,
+    sections: c.sections.filter(s => s.teacher_name && s.teacher_name.trim() !== '')
+  })).filter(c => c.sections.length > 0);
+
+  return NextResponse.json(sanitizedCourses);
 }
