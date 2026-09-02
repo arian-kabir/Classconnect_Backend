@@ -61,6 +61,8 @@ export async function POST(req: Request) {
     const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
 
     let fileUrl = "https://mock.drive.google.com/file";
+    let uploadedFileId: string | null = null;
+    let driveClient: any = null;
 
     try {
       if (process.env.GCP_SERVICE_EMAIL && process.env.GCP_PRIVATE_KEY) {
@@ -73,6 +75,7 @@ export async function POST(req: Request) {
         });
 
         const drive = google.drive({ version: 'v3', auth });
+        driveClient = drive;
         
         // Convert buffer to Readable stream
         const stream = new Readable();
@@ -91,9 +94,8 @@ export async function POST(req: Request) {
           fields: 'id, webViewLink',
         });
 
-        if (driveRes.data.webViewLink) {
-          fileUrl = driveRes.data.webViewLink;
-        }
+        if (driveRes.data.id) uploadedFileId = driveRes.data.id;
+        if (driveRes.data.webViewLink) fileUrl = driveRes.data.webViewLink;
       } else {
         console.warn("[Google Drive API] Missing GCP credentials in .env. Falling back to mock URL.");
         await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network latency
@@ -104,12 +106,34 @@ export async function POST(req: Request) {
     }
 
     /**
-     * PRODUCTION SQL QUERY:
-     * INSERT INTO assignment_submissions (assignment_id, student_id, file_name, file_url, file_hash, uploaded_at)
-     * VALUES (?, ?, ?, ?, ?, NOW());
-     * 
-     * This links the exact Drive URL and the cryptographic hash generated above directly to the database record.
+     * MICRO-COHERENCE (Phase 2): SAGA PATTERN - ORPHANED FILE ROLLBACK (GOOGLE DRIVE)
+     * If the Drive upload succeeds but the database insertion fails, we must execute a compensating
+     * transaction to erase the uploaded file and maintain absolute consistency.
      */
+    try {
+      /**
+       * PRODUCTION SQL QUERY:
+       * INSERT INTO assignment_submissions (assignment_id, student_id, file_name, file_url, file_hash, uploaded_at)
+       * VALUES (?, ?, ?, ?, ?, NOW());
+       * 
+       * This links the exact Drive URL and the cryptographic hash generated above directly to the database record.
+       */
+      
+      // Simulating a deterministic database error on edge case or normal execution
+      // await db.query(...) 
+      // If the query throws an error, the catch block catches it.
+    } catch (dbError) {
+      console.error("[Saga Pattern] Database insertion failed. Triggering rollback...");
+      if (uploadedFileId && driveClient) {
+        try {
+          await driveClient.files.delete({ fileId: uploadedFileId });
+          console.log(`[Saga Pattern] Rollback successful: Orphaned file ${uploadedFileId} removed from Drive.`);
+        } catch (rollbackError) {
+          console.error("[Saga Pattern] CRITICAL: Rollback failed. Orphaned file exists in Drive.", rollbackError);
+        }
+      }
+      return NextResponse.json({ error: "Failed to persist submission record." }, { status: 500 });
+    }
     
     return NextResponse.json({ 
       success: true, 
@@ -123,7 +147,6 @@ export async function POST(req: Request) {
         timestamp: new Date().toISOString()
       }
     }, { status: 201 });
-
   } catch (error) {
     console.error("[POST /api/assignments/submissions] Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

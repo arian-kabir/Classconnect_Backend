@@ -13,7 +13,17 @@ function getQueue(): Queue {
       maxRetriesPerRequest: null,
       lazyConnect: true 
     });
-    deadlineQueue = new Queue('assignment-deadlines', { connection: redisConnection });
+    
+    // MICRO-COHERENCE (Phase 3): BULLMQ DEAD-LETTER QUEUE (DLQ) CONFIGURATION
+    deadlineQueue = new Queue('assignment-deadlines', { 
+      connection: redisConnection,
+      defaultJobOptions: { 
+        attempts: 3, 
+        backoff: { type: 'exponential', delay: 5000 }, 
+        removeOnComplete: true, 
+        removeOnFail: false 
+      }
+    });
   }
   return deadlineQueue;
 }
@@ -146,6 +156,25 @@ export async function POST(req: Request) {
       console.warn("[BullMQ] Failed to enqueue reminder. Redis might be unreachable in this dev environment.", queueError);
     }
     
+    /**
+     * MICRO-COHERENCE (Phase 1): REAL-TIME SOCKET.IO PROPAGATION (M3.3 -> M3.1)
+     * Tap into the existing global Socket.io server instance to broadcast updates
+     * to Arian's M3.1 Section-Scoped Chat Rooms.
+     */
+    const io = (global as any).io;
+    if (io) {
+      try {
+        io.to(`section_${sectionId}`).emit('assignment_deployed', { 
+          assignmentId: newAssignment.id, 
+          title: newAssignment.title, 
+          dueDate 
+        });
+        console.log(`[Socket.io] Propagated assignment_deployed to section_${sectionId}`);
+      } catch (socketError) {
+        console.error("[Socket.io] Propagation failed:", socketError);
+      }
+    }
+
     return NextResponse.json({ success: true, assignment: newAssignment }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/assignments] Error:", error);
