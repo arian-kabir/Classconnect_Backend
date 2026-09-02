@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as any)?.role;
+    
+    if (role !== 'student') {
+      return NextResponse.json({ error: "Forbidden: Only students can upload submissions." }, { status: 403 });
+    }
+
     const formData = await req.formData();
     const file = formData.get('file');
     const assignmentId = formData.get('assignmentId');

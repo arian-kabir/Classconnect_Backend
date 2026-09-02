@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../auth/[...nextauth]/route';
 
 interface FacultyMember {
   id: number;
@@ -23,6 +25,14 @@ export async function GET(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as any)?.role;
+    
+    // Cross-Faculty Coordination is highly private
+    if (role !== 'teacher' && role !== 'admin') {
+      return NextResponse.json({ error: "Forbidden: Only faculty members can access this orchestration ring." }, { status: 403 });
+    }
+
     const { courseId } = await params;
 
     if (!courseId || isNaN(parseInt(courseId, 10))) {
