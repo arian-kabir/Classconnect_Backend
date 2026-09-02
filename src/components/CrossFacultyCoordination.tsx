@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Users, Calendar, FileText, Vote, Plus, MessageSquare, AlertCircle, Send, CheckCircle2 } from "lucide-react";
 
 interface FacultyMember {

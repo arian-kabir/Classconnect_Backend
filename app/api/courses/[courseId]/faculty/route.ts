@@ -20,10 +20,10 @@ const mockFacultyMembers: Record<string, FacultyMember[]> = {
 
 export async function GET(
   req: Request,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
-    const { courseId } = params;
+    const { courseId } = await params;
 
     if (!courseId || isNaN(parseInt(courseId, 10))) {
       return NextResponse.json({ error: "Invalid courseId parameter" }, { status: 400 });
