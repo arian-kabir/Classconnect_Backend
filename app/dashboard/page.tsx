@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat' | 'Module 3'>('Routine');
-  const [showRemainder, setShowRemainder] = useState(true);
+  const [showReminder, setShowReminder] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -262,11 +262,11 @@ export default function DashboardPage() {
               {/* =========================================================
                   1. 4 ACTION / MODULE CARDS
                   ========================================================= */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card 1: Class Schedule */}
                 <div
                   onClick={() => setActiveTab('Routine')}
-                  className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
+                  className={`rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
                     activeTab === 'Routine' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
                   }`}
                 >
@@ -279,7 +279,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Card 2: Canvas */}
-                <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
+                <div className="bg-[#e5ece8] rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
                   <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                 {/* Card 3: Notes and Material */}
                 <div
                   onClick={() => setActiveTab('Notes')}
-                  className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
+                  className={`rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
                     activeTab === 'Notes' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
                   }`}
                 >
@@ -304,7 +304,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Card 4: Group Chats */}
-                <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
+                <div className="bg-[#e5ece8] rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
                   <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -315,12 +315,12 @@ export default function DashboardPage() {
               </div>
 
               {/* =========================================================
-                  2. REMAINDER BOARD BANNER
+                  2. REMINDER BOARD BANNER
                   ========================================================= */}
-              {showRemainder && (
+              {showReminder && (
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-[#707978] mb-3">
-                    Remainder Board
+                    Reminder Board
                   </h2>
                   <div className="bg-[#ebeded] rounded-xl px-5 py-4 flex items-center justify-between border border-[#d9dadb]">
                     <div className="flex items-center gap-3">
@@ -331,9 +331,9 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => setShowRemainder(false)}
+                      onClick={() => setShowReminder(false)}
                       className="text-[#707978] hover:text-[#191c1d] transition-colors p-1"
-                      aria-label="Dismiss remainder"
+                      aria-label="Dismiss reminder"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

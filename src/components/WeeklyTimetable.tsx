@@ -137,7 +137,7 @@ export default function WeeklyTimetable({
           <CardTitle className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Weekly Class Timetable
           </CardTitle>
-          <Badge variant="outline" className="text-xs font-medium text-slate-600 dark:text-slate-400">
+          <Badge variant="outline" className="text-xs font-medium text-slate-600 dark:text-slate-400 flex-shrink-0">
             7-Day Grid v2.0
           </Badge>
         </div>

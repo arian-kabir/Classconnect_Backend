@@ -50,11 +50,6 @@ import type { CourseWithSections, ConflictDetail, DayOfWeek } from "@/types/inde
 // Constants
 // ---------------------------------------------------------------------------
 
-const DAYS_OF_WEEK: ReadonlyArray<DayOfWeek> = [
-  "Monday", "Tuesday", "Wednesday", "Thursday",
-  "Friday", "Saturday", "Sunday",
-];
-
 /**
  * Explicit interface for form state.
  * IMPORTANT: All string fields must be typed as `string` (not literal types).
@@ -434,7 +429,7 @@ export default function RoutineBuilder() {
                     }}
                     disabled={isLoadingCourses}
                   >
-                    <SelectTrigger id="course-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
+                    <SelectTrigger id="course-select" className="w-full h-10 border-slate-200 dark:border-slate-800 text-sm focus:ring-2 focus:ring-blue-500 transition-all">
                       <SelectValue placeholder={isLoadingCourses ? "Loading courses…" : "Select a course…"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -457,7 +452,7 @@ export default function RoutineBuilder() {
                     onValueChange={(val) => updateField("section_id", val ?? "")}
                     disabled={!selectedCourseId || availableSections.length === 0}
                   >
-                    <SelectTrigger id="section-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
+                    <SelectTrigger id="section-select" className="w-full h-10 border-slate-200 dark:border-slate-800 text-sm focus:ring-2 focus:ring-blue-500 transition-all">
                       <SelectValue
                         placeholder={
                           !selectedCourseId ? "Select a course first"
@@ -477,8 +472,8 @@ export default function RoutineBuilder() {
                 </div>
               </div>
 
-              {/* ── Faria M1.1 Timeslot Preview (Students only) ──────────────── */}
-              {isStudent && formData.section_id && (
+              {/* ── Faria M1.1 Timeslot Preview ──────────────── */}
+              {formData.section_id && (
                 <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
@@ -514,78 +509,10 @@ export default function RoutineBuilder() {
                 </div>
               )}
 
-              {/* ── Row 2 & 3: Day, Room, and Time (Admins only) ───────── */}
-              {!isStudent && session?.user?.role === 'admin' && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label htmlFor="day-select" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
-                        Day of Week <span className="text-red-500" aria-hidden="true">*</span>
-                      </label>
-                      <Select value={formData.day_of_week} onValueChange={(val) => updateField("day_of_week", val as DayOfWeek)}>
-                        <SelectTrigger id="day-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DAYS_OF_WEEK.map((day) => <SelectItem key={day} value={day}>{day}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label htmlFor="room-input" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
-                        Room Number
-                      </label>
-                      <input
-                        id="room-input"
-                        type="text"
-                        placeholder="e.g. UB2101"
-                        className="w-full h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
-                        value={formData.room_number}
-                        onChange={(e) => updateField("room_number", e.target.value)}
-                        maxLength={20}
-                      />
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                      Class Time <span className="text-red-500" aria-hidden="true">*</span>
-                    </p>
-                    <div className="space-y-1.5">
-                      <label htmlFor="time-select" className="sr-only">Select Time Slot</label>
-                      <Select
-                        value={`${formData.start_time}-${formData.end_time}`}
-                        onValueChange={(val) => {
-                          if (!val) return;
-                          const [start, end] = val.split('-');
-                          updateField("start_time", start);
-                          updateField("end_time", end);
-                        }}
-                      >
-                        <SelectTrigger id="time-select" className="w-full border-slate-200 dark:border-slate-800 text-sm bg-white dark:bg-slate-900 font-semibold text-slate-800 dark:text-slate-200">
-                          <SelectValue placeholder="Select official time slot..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="08:00-09:20">08:00 AM – 09:20 AM</SelectItem>
-                          <SelectItem value="09:30-10:50">09:30 AM – 10:50 AM</SelectItem>
-                          <SelectItem value="11:00-12:20">11:00 AM – 12:20 PM</SelectItem>
-                          <SelectItem value="12:30-13:50">12:30 PM – 01:50 PM</SelectItem>
-                          <SelectItem value="14:00-15:20">02:00 PM – 03:20 PM</SelectItem>
-                          <SelectItem value="15:30-16:50">03:30 PM – 04:50 PM</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </>
-              )}
-
               {/* ── Submit ──────────────────────────────────────────────── */}
               <Button
                 type="submit"
-                disabled={
-                  isSubmitting ||
-                  !formData.section_id ||
-                  (!isStudent && session?.user?.role === 'admin' && (!formData.start_time || !formData.end_time || formData.start_time >= formData.end_time))
-                }
+                disabled={isSubmitting || !formData.section_id}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm py-2.5 shadow-sm transition-colors rounded-lg"
               >
                 {isSubmitting ? (
