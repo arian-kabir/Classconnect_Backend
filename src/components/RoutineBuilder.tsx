@@ -385,15 +385,22 @@ export default function RoutineBuilder() {
 
           {/* ── Role Transformation: Teacher Read-Only View ───────────── */}
           {session?.user?.role === 'teacher' ? (
-            <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-5 space-y-4 text-center mt-4">
-              <CalendarDays className="w-8 h-8 text-indigo-400 mx-auto" />
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-6 space-y-5 text-center mt-4">
+              <CalendarDays className="w-8 h-8 text-indigo-500 mx-auto" />
               <div>
-                <p className="text-sm font-bold text-indigo-900">Your Assigned Classes</p>
-                <p className="text-xs font-medium text-indigo-700/80 mt-1 max-w-xs mx-auto">
-                  As an instructor, your class schedule is automatically provisioned by the system administrators. 
-                  View your timetable in the Academic Routine below.
+                <p className="text-base font-bold text-indigo-900">Official Assigned Schedule</p>
+                <p className="text-xs font-medium text-indigo-700/80 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                  As an instructor, your schedule is strictly provisioned by the administrative staff. 
+                  Please review your timetable below.
                 </p>
               </div>
+              <Button
+                variant="outline"
+                className="mt-4 border-indigo-200 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 transition-colors"
+                onClick={() => window.location.href = 'mailto:admin@bracu.ac.bd?subject=Schedule%20Change%20Request'}
+              >
+                Request Schedule Change
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 mt-4" noValidate>
@@ -486,9 +493,9 @@ export default function RoutineBuilder() {
                       <div className="h-9 bg-blue-100 rounded-lg w-4/5" />
                     </div>
                   ) : !previewData?.seeded || previewData.slots.length === 0 ? (
-                    <p className="text-xs text-blue-600/70 font-medium italic py-2">
-                      No timetable published yet for this section. Your lecturer will seed the schedule before the semester starts.
-                    </p>
+                    <div className="p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg text-amber-800 text-xs font-medium shadow-sm">
+                      Admin has not provisioned a time schedule for this section yet. Enrollment locked.
+                    </div>
                   ) : (
                     <ul className="space-y-2">
                       {previewData.slots.map((slot, idx) => (
@@ -512,7 +519,7 @@ export default function RoutineBuilder() {
               {/* ── Submit ──────────────────────────────────────────────── */}
               <Button
                 type="submit"
-                disabled={isSubmitting || !formData.section_id}
+                disabled={isSubmitting || !formData.section_id || (!previewData?.seeded || previewData.slots.length === 0)}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm py-2.5 shadow-sm transition-colors rounded-lg"
               >
                 {isSubmitting ? (

@@ -75,9 +75,25 @@ export async function GET(req: Request) {
       if (isNaN(parsedId)) {
         return NextResponse.json({ error: "Invalid sectionId parameter" }, { status: 400 });
       }
+
+      // Workspace Key (Phase 3): Enforce strict JOIN validation equivalent
+      const role = (session?.user as any)?.role || 'student';
+      if (role === 'student') {
+        // Mock enrollment: Student is only in section 1 and 3
+        if (parsedId !== 1 && parsedId !== 3) {
+          return NextResponse.json({ error: "Forbidden: You are not actively enrolled in this section." }, { status: 403 });
+        }
+      }
+
       return NextResponse.json(mockAssignments.filter(a => a.sectionId === parsedId));
     }
     
+    // If fetching all, filter to enrolled only for students
+    const role = (session?.user as any)?.role || 'student';
+    if (role === 'student') {
+      return NextResponse.json(mockAssignments.filter(a => a.sectionId === 1 || a.sectionId === 3));
+    }
+
     return NextResponse.json(mockAssignments);
   } catch (error) {
     console.error("[GET /api/assignments] Error:", error);
@@ -112,6 +128,15 @@ export async function POST(req: Request) {
     }
     if (!dueDate || isNaN(Date.parse(dueDate))) {
       return NextResponse.json({ error: "Valid ISO dueDate is required" }, { status: 400 });
+    }
+
+    // Teacher Content Authority (Phase 3)
+    if (role === 'teacher') {
+      const teacherName = session.user?.name;
+      // In mock mode: Dr. Sarah Chen -> Section 1, Grace Hopper -> Section 3
+      if ((sectionId === 1 && teacherName !== 'Dr. Sarah Chen') || (sectionId === 3 && teacherName !== 'Grace Hopper')) {
+        return NextResponse.json({ error: "Forbidden: You are not officially assigned to this section by the Admin." }, { status: 403 });
+      }
     }
 
     // Simulate database latency

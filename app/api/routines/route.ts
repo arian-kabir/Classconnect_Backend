@@ -219,10 +219,10 @@ export async function POST(req: Request) {
     const masterSlots = mockRoutines.filter(
       r => Number(r.section_id) === parsedSectionId && r.is_owner
     );
-    if (masterSlots.length === 0) {
+    if (masterSlots.length === 0 || !masterSlots[0].teacher_name) {
       return NextResponse.json(
-        { error: 'No schedule has been set for this section yet. Please check back once your lecturer publishes the timetable.' },
-        { status: 400 }
+        { error: 'Admin has not provisioned a time schedule for this section yet. Enrollment locked.' },
+        { status: 403 }
       );
     }
 
@@ -262,7 +262,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, routine: clonedRoutines[0], message: successMsg }, { status: 201 });
   }
 
-  // ── TEACHER / ADMIN path ──────────────────────────────────────────────────
+  // ── ADMIN path ──────────────────────────────────────────────────
+  if (role === 'teacher') {
+    return NextResponse.json({ error: 'Forbidden: Teachers cannot mutate the routines table directly.' }, { status: 403 });
+  }
   const { day_of_week, start_time, end_time, room_number } = body;
 
   if (!day_of_week || !start_time || !end_time) {
@@ -353,11 +356,11 @@ export async function DELETE(req: Request) {
   }
 
   const isAdmin          = role === 'admin';
-  const isTeacherOwner   = role === 'teacher' && target.teacher_name === userName;
+  // Teachers cannot mutate routines directly
   // IDOR FIX: ownership verified via session.user.email, never a body/param value
   const isStudentDropping = role === 'student' && !target.is_owner && target.student_email === userEmail;
 
-  if (!isAdmin && !isTeacherOwner && !isStudentDropping) {
+  if (!isAdmin && !isStudentDropping) {
     return NextResponse.json({ error: 'Forbidden: You do not have permission to remove this entry.' }, { status: 403 });
   }
 

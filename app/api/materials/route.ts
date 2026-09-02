@@ -187,6 +187,27 @@ export async function GET(req: Request) {
     );
   }
 
+  const sectionId = searchParams.get('sectionId');
+  if (sectionId) {
+    const parsedId = parseInt(sectionId, 10);
+    if (!isNaN(parsedId)) {
+      if (role === 'student' && parsedId !== 1 && parsedId !== 3) {
+        return NextResponse.json({ error: "Forbidden: You are not actively enrolled in this section." }, { status: 403 });
+      }
+      const section = mockSections.find(s => s.section_id === parsedId);
+      const visibleSections = section ? [section] : [];
+      const filtered = visibleSections.map(s => ({
+        ...s,
+        materials: tagFilter ? s.materials.filter(m => m.category_tag === tagFilter) : s.materials,
+      }));
+      return NextResponse.json({
+        total_sections: filtered.length,
+        total_materials: filtered.reduce((acc, s) => acc + s.materials.length, 0),
+        sections: filtered,
+      });
+    }
+  }
+
   // For students: the production query would cross-join against routines.user_id.
   // In mock mode, section_id 1 maps to the enrolled student's routine (see routines mock).
   const visibleSections = role === 'student'
@@ -283,6 +304,15 @@ export async function POST(req: Request) {
   const section = mockSections.find(s => s.section_id === sectionId);
   if (!section) {
     return NextResponse.json({ error: 'Section not found.' }, { status: 404 });
+  }
+
+  // Teacher Content Authority (Phase 3)
+  if (role === 'teacher') {
+    const teacherName = session.user?.name;
+    // In mock mode: Dr. Sarah Chen -> Section 1, Grace Hopper -> Section 3
+    if ((sectionId === 1 && teacherName !== 'Dr. Sarah Chen') || (sectionId === 3 && teacherName !== 'Grace Hopper')) {
+      return NextResponse.json({ error: "Forbidden: You are not officially assigned to this section by the Admin." }, { status: 403 });
+    }
   }
 
   // ── Persist (mock) — production: INSERT INTO course_materials ... ──
