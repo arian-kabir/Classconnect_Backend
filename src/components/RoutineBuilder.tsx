@@ -305,7 +305,8 @@ export default function RoutineBuilder() {
       }
 
       if (!res.ok) {
-        throw new Error(data.error ?? `Unexpected error (HTTP ${res.status})`);
+        setError(data.error ?? `Unexpected error (HTTP ${res.status})`);
+        return;
       }
 
       if (isStudent) {
