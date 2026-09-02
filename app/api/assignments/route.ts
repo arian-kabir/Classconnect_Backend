@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
+import { Queue } from 'bullmq';
+import IORedis from 'ioredis';
+
+// Establish connection to Redis for BullMQ lazily inside handlers
+// to prevent crashing Next.js build if Redis is not running locally
+let deadlineQueue: Queue | null = null;
+function getQueue(): Queue {
+  if (!deadlineQueue) {
+    const redisConnection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', { 
+      maxRetriesPerRequest: null,
+      lazyConnect: true 
+    });
+    deadlineQueue = new Queue('assignment-deadlines', { connection: redisConnection });
+  }
+  return deadlineQueue;
+}
 
 interface Assignment {
   id: number;
@@ -101,6 +117,34 @@ export async function POST(req: Request) {
     };
 
     mockAssignments.push(newAssignment);
+
+    /**
+     * MICRO-COHERENCE (Phase 2): BULLMQ & REDIS DEADLINE ORCHESTRATION
+     * Dispatch a background job exactly 24 hours before the dueDate.
+     * Faria's M3.4 Automated Alerts module will consume this job and email the students.
+     */
+    try {
+      // Calculate delay in ms (trigger 24 hours before dueDate)
+      const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+      const targetTime = new Date(dueDate).getTime();
+      const delay = Math.max(0, targetTime - Date.now() - twentyFourHoursMs);
+
+      // Add to BullMQ queue
+      await getQueue().add('assignment-reminder-24h', {
+        assignmentId: newAssignment.id,
+        sectionId,
+        title: newAssignment.title,
+        dueDate,
+        teacherId: session?.user?.email || 'unknown',
+      }, { 
+        delay,
+        removeOnComplete: true,
+        removeOnFail: false
+      });
+      console.log(`[BullMQ] Enqueued reminder job for assignment ${newAssignment.id} with delay ${delay}ms`);
+    } catch (queueError) {
+      console.warn("[BullMQ] Failed to enqueue reminder. Redis might be unreachable in this dev environment.", queueError);
+    }
     
     return NextResponse.json({ success: true, assignment: newAssignment }, { status: 201 });
   } catch (error) {
