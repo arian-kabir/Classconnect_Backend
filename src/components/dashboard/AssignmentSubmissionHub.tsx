@@ -51,6 +51,7 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<{id: number, message: string} | null>(null);
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +100,11 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
         body: formData
       });
       
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        setUploadError({ id: assignmentId, message: errorData.error || `Upload failed (HTTP ${res.status})` });
+        return;
+      }
       
       // INTEGRATION HOOK — Lamia's M3.6 (Academic Assignment Audit Log)
       // Emit a structured audit event for Lamia's logging infrastructure.
@@ -294,6 +299,14 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
                             }} 
                           />
                         </label>
+                      )}
+                      
+                      {/* Render Graceful Error Overlay */}
+                      {uploadError?.id === assignment.id && (
+                        <div className="mt-3 p-2.5 bg-red-50 border border-red-100 rounded-lg text-red-600 text-xs font-semibold flex items-center gap-2">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          {uploadError.message}
+                        </div>
                       )}
                     </div>
                   )}
