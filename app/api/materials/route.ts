@@ -1,3 +1,5 @@
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
 
 // Global in-memory DB for materials
@@ -32,10 +34,23 @@ const mockData = {
 };
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   return NextResponse.json(mockData);
 }
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const role = (session?.user as any)?.role;
+  if (role !== 'teacher' && role !== 'admin') {
+    return NextResponse.json({ error: "Forbidden: Only teachers and admins can upload materials." }, { status: 403 });
+  }
+
   const formData = await req.formData();
   const file = formData.get('file');
   const title = formData.get('title');
@@ -50,7 +65,7 @@ export async function POST(req: Request) {
   section.materials.push({
     note_id: Date.now(),
     title: title as string,
-    uploader_name: "Current User", // Mock user
+    uploader_name: session?.user?.name || "Current User",
     created_at: new Date().toISOString(),
     text_content: `File: ${file ? (file as File).name : 'none'}`
   });

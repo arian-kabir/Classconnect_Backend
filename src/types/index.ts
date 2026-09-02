@@ -227,3 +227,57 @@ export interface DashboardData {
   stats:   DashboardStats;
   courses: DashboardCourse[];
 }
+
+export interface Assignment {
+  id: number;
+  sectionId: number;
+  title: string;
+  dueDate: string;
+  submissionCount: number;
+  status: SubmissionStatus | 'active' | 'closed'; // Based on how it's used
+}
+
+export interface AssignmentSubmission {
+  submissionId: number;
+  assignmentId: number;
+  studentId: number;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  uploadedAt: string;
+  driveFileUrl: string;
+}
+
+export interface FacultyMember {
+  id: number;
+  name: string;
+  role: string;
+}
+
+export interface MeetingProposal {
+  id: number;
+  title: string;
+  proposedBy: string;
+  timeslots: MeetingTimeslot[];
+  courseId: number;
+}
+
+export interface MeetingTimeslot {
+  id: number;
+  proposalId: number;
+  datetime: string;
+  voteCount: number;
+  hasVoted: boolean;
+}
+
+export interface AuditLogEntry {
+  logId: string;
+  eventType: string;
+  assignmentId: number;
+  sectionId: number;
+  userId: string;
+  fileName: string;
+  fileHash: string;
+  timestamp: string;
+  status: string;
+}

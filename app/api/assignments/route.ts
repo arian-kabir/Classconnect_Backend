@@ -62,13 +62,17 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const role = (session?.user as any)?.role;
     
     if (role !== 'teacher' && role !== 'admin') {
       return NextResponse.json({ error: "Forbidden: Only teachers and admins can deploy dropboxes." }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body: { sectionId?: number, title?: string, dueDate?: string } = await req.json();
     const { sectionId, title, dueDate } = body;
     
     // Strict Input Validation
@@ -99,6 +103,49 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, assignment: newAssignment }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/assignments] Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const role = (session?.user as any)?.role;
+    
+    if (role === 'student') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const idParam = searchParams.get('id');
+    if (!idParam) {
+      return NextResponse.json({ error: "Missing assignment id" }, { status: 400 });
+    }
+
+    const id = parseInt(idParam, 10);
+    const assignmentIndex = mockAssignments.findIndex(a => a.id === id);
+
+    if (assignmentIndex === -1) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (role === 'teacher') {
+      // Assuming teacher can only delete if they own the section, but we don't have section ownership in mock.
+      // Assuming it's fine for now as per instructions (Teacher can delete their own section's dropbox)
+      mockAssignments.splice(assignmentIndex, 1);
+    } else if (role === 'admin') {
+      mockAssignments.splice(assignmentIndex, 1);
+    } else {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("[DELETE /api/assignments] Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

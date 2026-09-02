@@ -23,10 +23,13 @@ let mockRoutines: RoutineEntry[] = [
 export async function GET() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role || 'student';
+  const email = session?.user?.email;
   
   if (role === 'student') {
-    // Students only see their own enrolled classes (is_owner: false)
-    return NextResponse.json(mockRoutines.filter(r => !r.is_owner));
+    // SECURITY FINDING: The GET filter logic using `is_owner` is a design smell.
+    // A student's routine should be filtered by `user_id` (or email), not a boolean flag that any mock can spoof.
+    // Fixed logic below checks the email.
+    return NextResponse.json(mockRoutines.filter(r => !r.is_owner && (r as any).student_email === email));
   }
   
   // Teachers and Admins can see the global master timetable
@@ -37,11 +40,13 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role || 'student';
   const userName = session?.user?.name || 'Current User';
+  const userEmail = session?.user?.email;
   const body = await req.json();
 
   if (role === 'student') {
     // Audit check 1: Student duplicate enrollment
-    const alreadyEnrolled = mockRoutines.some(r => r.section_id === parseInt(body.section_id) && !r.is_owner);
+    // Ensure that it's this specific student that is already enrolled
+    const alreadyEnrolled = mockRoutines.some(r => r.section_id === parseInt(body.section_id) && !r.is_owner && (r as any).student_email === userEmail);
     if (alreadyEnrolled) {
       return NextResponse.json({ error: "You are already enrolled in this section." }, { status: 409 });
     }
@@ -57,10 +62,19 @@ export async function POST(req: Request) {
       ...masterRoutine,
       routine_id: Date.now(), // Unique ID for student's enrollment record
       is_owner: false, // Students don't own the class block
-      teacher_name: masterRoutine.teacher_name
+      teacher_name: masterRoutine.teacher_name,
+      student_email: userEmail // Track the student owning this record
     } as unknown as RoutineEntry;
     
     mockRoutines.push(studentRoutine);
+
+    // INTEGRATION HOOK — Arian's M3.1 (Section-Scoped Multi-Role Chat Room Orchestrator):
+    // When a student enrolls in a section, they must be auto-added to the section's
+    // chat room. In production, this would be:
+    // await db.execute('INSERT INTO chat_room_members (room_id, user_id, role) SELECT room_id, ?, ? FROM chat_rooms WHERE section_id = ?', [userId, 'student', sectionId]);
+    // For now, this is a documented integration hook awaiting Arian's chat room API.
+    console.log(`[ChatOrchestrator M3.1] Student enrolled → queue section ${body.section_id} chat room membership`);
+
     return NextResponse.json({ success: true, routine: studentRoutine });
   }
 
@@ -109,6 +123,7 @@ export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role || 'student';
   const userName = session?.user?.name || 'Current User';
+  const userEmail = session?.user?.email;
 
   const { searchParams } = new URL(req.url);
   const routineIdStr = searchParams.get('routine_id');
@@ -120,10 +135,11 @@ export async function DELETE(req: Request) {
     if (routineToDelete) {
       // 1. Admins have absolute privileges
       // 2. Teachers can only delete their OWN routines
-      // 3. Students can only drop their own enrollment (where is_owner is false)
+      // 3. Students can only drop their own enrollment
       const isAdmin = role === 'admin';
       const isTeacherOwner = role === 'teacher' && routineToDelete.teacher_name === userName;
-      const isStudentDropping = role === 'student' && !routineToDelete.is_owner;
+      // VULNERABILITY FIX: IDOR fixed by checking that the student deleting the routine is actually the student who owns it
+      const isStudentDropping = role === 'student' && !routineToDelete.is_owner && (routineToDelete as any).student_email === userEmail;
       
       if (isAdmin || isTeacherOwner || isStudentDropping) {
         mockRoutines = mockRoutines.filter(r => r.routine_id !== routineId);

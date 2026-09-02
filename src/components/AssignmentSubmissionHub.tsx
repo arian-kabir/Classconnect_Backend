@@ -7,15 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UploadCloud, Download, CheckCircle, Clock, AlertCircle, FileArchive, Plus, RefreshCw, X } from "lucide-react";
-
-interface Assignment {
-  id: number;
-  sectionId: number;
-  title: string;
-  dueDate: string;
-  submissionCount: number;
-  status: "active" | "closed";
-}
+import type { Assignment, AuditLogEntry } from "@/types/index";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -54,6 +46,7 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeUploadId, setActiveUploadId] = useState<number | null>(null);
+  const [submittedIds, setSubmittedIds] = useState<Set<number>>(new Set());
   
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -108,8 +101,27 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
       
       if (!res.ok) throw new Error("Upload failed");
       
+      // INTEGRATION HOOK — Lamia's M3.6 (Academic Assignment Audit Log)
+      // Emit a structured audit event for Lamia's logging infrastructure.
+      // In production: POST to /api/audit with the AuditLogEntry payload.
+      const auditPayload: AuditLogEntry = {
+        logId: `${Date.now()}`,
+        eventType: 'SUBMISSION_UPLOADED',
+        assignmentId,
+        sectionId,
+        userId: session?.user?.email ?? 'unknown',
+        fileName: file.name,
+        fileHash: `sha256-mock-${file.size}`, // TODO: compute real SHA-256 in production
+        timestamp: new Date().toISOString(),
+        status: 'success',
+      };
+      console.log('[AuditLog M3.6] Emission payload:', auditPayload);
+      // TODO: await fetch('/api/audit', { method: 'POST', body: JSON.stringify(auditPayload) });
+
       // Artificial delay to simulate Drive Sync and give visual feedback
       await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setSubmittedIds(prev => new Set(prev).add(assignmentId));
       mutate();
     } catch (err) {
       console.error(err);
@@ -173,7 +185,15 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Submission Deadline</label>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
+                  /**
+                   * INTEGRATION HOOK — Faria's M3.4 (Contextual Study Scheduler):
+                   * When a new assignment dropbox is deployed, the `dueDate` must be forwarded
+                   * to Faria's BullMQ job scheduler to fire reminder notifications
+                   * 24h and 1h before the deadline. TODO: Emit event to /api/notifications/schedule.
+                   */
+                  Submission Deadline
+                </label>
                 <input
                   type="datetime-local"
                   value={dueDate}
@@ -220,8 +240,11 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
             </div>
           ) : (
             assignments.map((assignment) => {
+              // The isClosed calculation compares the deadline with the current local time.
+              // NOTE: API ISO strings should ideally be UTC and compared consistently to avoid timezone edge cases.
               const isClosed = new Date(assignment.dueDate) < new Date();
               const uploadActive = activeUploadId === assignment.id;
+              const hasSubmitted = submittedIds.has(assignment.id);
               
               return (
                 <div key={assignment.id} className="p-4 border border-slate-200 rounded-xl flex flex-col gap-3 bg-white hover:border-indigo-100 transition-colors group">
@@ -242,30 +265,36 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
 
                   {role === "student" && (
                     <div className="mt-2">
-                      <label className={`flex items-center justify-center w-full h-12 border-2 border-dashed rounded-lg transition-all ${
-                        isClosed ? "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed" : 
-                        uploadActive ? "border-indigo-400 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 cursor-pointer"
-                      }`}>
-                        {uploadActive ? (
-                          <span className="text-xs font-bold text-indigo-600 flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" /> 
-                            Syncing to Google Drive...
-                          </span>
-                        ) : (
-                          <span className="text-xs font-semibold text-slate-600 flex items-center gap-2">
-                            <UploadCloud className={`w-4 h-4 ${isClosed ? 'text-slate-400' : 'text-indigo-500'}`} /> 
-                            {isClosed ? "Submissions Closed" : "Upload Submission (Drive Sync)"}
-                          </span>
-                        )}
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          disabled={isClosed || uploadActive}
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) handleFileUpload(assignment.id, e.target.files[0]);
-                          }} 
-                        />
-                      </label>
+                      {hasSubmitted ? (
+                        <div className="flex items-center justify-center w-full h-12 border-2 border-emerald-400 bg-emerald-50 rounded-lg text-emerald-700 font-bold text-xs gap-2">
+                          <CheckCircle className="w-4 h-4" /> Submitted ✓
+                        </div>
+                      ) : (
+                        <label className={`flex items-center justify-center w-full h-12 border-2 border-dashed rounded-lg transition-all ${
+                          isClosed ? "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed" : 
+                          uploadActive ? "border-indigo-400 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 cursor-pointer"
+                        }`}>
+                          {uploadActive ? (
+                            <span className="text-xs font-bold text-indigo-600 flex items-center gap-2">
+                              <span className="w-3.5 h-3.5 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" /> 
+                              Syncing to Google Drive...
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold text-slate-600 flex items-center gap-2">
+                              <UploadCloud className={`w-4 h-4 ${isClosed ? 'text-slate-400' : 'text-indigo-500'}`} /> 
+                              {isClosed ? "Submissions Closed" : "Upload Submission (Drive Sync)"}
+                            </span>
+                          )}
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            disabled={isClosed || uploadActive}
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) handleFileUpload(assignment.id, e.target.files[0]);
+                            }} 
+                          />
+                        </label>
+                      )}
                     </div>
                   )}
 
@@ -274,10 +303,16 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
                       <Button variant="outline" size="sm" className="flex-1 text-xs h-8 bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 font-semibold shadow-sm">
                         <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> Review ({assignment.submissionCount})
                       </Button>
-                      {(role === "teacher" || role === "admin") && (
+                      {role === "tutor" ? (
                         <Button variant="outline" size="sm" className="flex-1 text-xs h-8 bg-indigo-50 hover:bg-indigo-100 border-indigo-100 text-indigo-700 font-semibold shadow-sm">
-                          <Download className="w-3.5 h-3.5 mr-1.5" /> Export (.zip)
+                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Review & Return
                         </Button>
+                      ) : (
+                        (role === "teacher" || role === "admin") && (
+                          <Button variant="outline" size="sm" className="flex-1 text-xs h-8 bg-indigo-50 hover:bg-indigo-100 border-indigo-100 text-indigo-700 font-semibold shadow-sm">
+                            <Download className="w-3.5 h-3.5 mr-1.5" /> Export (.zip)
+                          </Button>
+                        )
                       )}
                     </div>
                   )}

@@ -31,19 +31,36 @@ export default function CrossFacultyCoordination({ courseId }: { courseId: numbe
     `/api/courses/${courseId}/faculty`, 
     fetcher
   );
+
+  // New SWR fetch for meetings
+  const { data: meetings, isLoading: meetingsLoading } = useSWR<any[]>(
+    `/api/courses/${courseId}/meetings`,
+    fetcher
+  );
   
   const [activeTab, setActiveTab] = useState<"meetings" | "resources" | "chat">("meetings");
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [messages, setMessages] = useState<{senderId: string, name: string, text: string, timestamp: string}[]>([
+    { senderId: "SC", name: "Dr. Sarah Chen", text: "Have we decided on the rubric for Assignment 2?", timestamp: "10:42 AM" }
+  ]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
     
+    const newMsg = {
+      senderId: session?.user?.name ? session.user.name.split(' ').map(n => n[0]).join('') : "ME",
+      name: session?.user?.name || "Me",
+      text: chatInput.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages(prev => [...prev, newMsg]);
+    setChatInput("");
     setIsSending(true);
     // Simulate network delay for sending message
     await new Promise(resolve => setTimeout(resolve, 600));
-    setChatInput("");
     setIsSending(false);
   };
 
@@ -181,18 +198,20 @@ export default function CrossFacultyCoordination({ courseId }: { courseId: numbe
                 Encrypted Alignment Ring
               </div>
               
-              <div className="flex gap-3">
-                <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-1">SC</div>
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-bold text-slate-900">Dr. Sarah Chen</span>
-                    <span className="text-[10px] text-slate-400">10:42 AM</span>
+              {messages.map((msg, idx) => (
+                <div key={idx} className="flex gap-3">
+                  <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-1">{msg.senderId}</div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-bold text-slate-900">{msg.name}</span>
+                      <span className="text-[10px] text-slate-400">{msg.timestamp}</span>
+                    </div>
+                    <p className="text-sm text-slate-700 bg-slate-50 p-2.5 rounded-r-xl rounded-bl-xl border border-slate-100 mt-1">
+                      {msg.text}
+                    </p>
                   </div>
-                  <p className="text-sm text-slate-700 bg-slate-50 p-2.5 rounded-r-xl rounded-bl-xl border border-slate-100 mt-1">
-                    Have we decided on the rubric for Assignment 2?
-                  </p>
                 </div>
-              </div>
+              ))}
             </div>
             
             <form onSubmit={handleSendMessage} className="flex gap-2 relative">

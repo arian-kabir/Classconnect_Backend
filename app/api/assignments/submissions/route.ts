@@ -29,6 +29,18 @@ export async function POST(req: Request) {
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: "File exceeds 20MB limit" }, { status: 413 });
     }
+    
+    // Security Check: Enforce allowed MIME types (PDF, DOCX, JPEG, PNG, DOC)
+    const allowedMimeTypes = [
+      'application/pdf', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+      'image/jpeg', 
+      'image/png', 
+      'application/msword'
+    ];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Unsupported Media Type" }, { status: 415 });
+    }
 
     // In a production edge-tech environment, you would stream this file to Google Drive 
     // or AWS S3 via pre-signed URLs or direct stream to avoid memory bloat.
@@ -47,6 +59,29 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error("[POST /api/assignments/submissions] Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const role = (session?.user as any)?.role;
+    
+    // Check if the user is authorized to view submissions
+    // In a real app, students would be filtered to only see their own submissions
+    if (role !== 'teacher' && role !== 'admin' && role !== 'tutor' && role !== 'student') {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // In this mock, we just return empty array, normally we'd filter based on role & assignment ID
+    return NextResponse.json([]);
+  } catch (error) {
+    console.error("[GET /api/assignments/submissions] Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

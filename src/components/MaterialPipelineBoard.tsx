@@ -74,11 +74,20 @@ export default function MaterialPipelineBoard() {
     if (!materialsData) return null;
     if (isTeacher) return materialsData; // Teachers/Admins see all assigned pipeline sections
 
-    const enrolledSectionIds = new Set(routines?.map(r => r.section_id) || []);
+    const enrolledSectionIds = new Set(routines?.map(r => Number(r.section_id)) || []);
     
     return {
       ...materialsData,
-      sections: materialsData.sections.filter(s => enrolledSectionIds.has(s.section_id))
+      sections: materialsData.sections.filter(s => {
+        /**
+         * INTEGRATION HOOK — Lamia's M1.2 (Course Material Category Classifier):
+         * Materials returned by /api/materials should carry a `tag` field
+         * (e.g. 'Syllabus', 'Lecture Slides', 'Lab Manual', 'Reference Book')
+         * from Lamia's structural metadata system. TODO: Add tag filter UI.
+         * Contract: MaterialSection.materials[].tag — needs addition to MaterialSection type.
+         */
+        return enrolledSectionIds.has(Number(s.section_id));
+      })
     };
   }, [materialsData, routines, isTeacher]);
   
@@ -95,6 +104,20 @@ export default function MaterialPipelineBoard() {
     if (!uploadTitle.trim() || !selectedFile) {
         setUploadError("Please provide a title and select a file to upload.");
         return;
+    }
+
+    const allowedMimeTypes = [
+      'application/pdf', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+      'image/jpeg', 
+      'image/png', 
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation' // PPTX
+    ];
+
+    if (!allowedMimeTypes.includes(selectedFile.type)) {
+      setUploadError(`Unsupported Media Type: ${selectedFile.type}. Allowed: PDF, DOCX, PPTX, JPEG, PNG.`);
+      return;
     }
 
     setIsUploading(true);

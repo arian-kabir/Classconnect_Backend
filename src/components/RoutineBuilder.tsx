@@ -123,8 +123,15 @@ export default function RoutineBuilder() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ── Fetch courses on mount and on search change ────────────────────────
+    // ── Fetch courses on mount and on search change ────────────────────────
   useEffect(() => {
+    /**
+     * INTEGRATION HOOK — Faria's M1.1 (Automated External Spreadsheet Routine Intake):
+     * The `/api/courses` endpoint is expected to be seeded by Faria's background
+     * Google Sheets scraping script, which populates the `sections` and `routines`
+     * tables. This component consumes that pre-populated data.
+     * Contract: CourseWithSections[] — see @/types/index.ts
+     */
     const controller = new AbortController();
     
     const fetchCourses = async () => {
@@ -274,7 +281,12 @@ export default function RoutineBuilder() {
         throw new Error(data.error ?? `Unexpected error (HTTP ${res.status})`);
       }
 
-      setSuccessMessage("✓ Class added to your routine successfully!");
+      if (isStudent) {
+        setSuccessMessage(`✓ Enrolled in Section ${current.section_id} successfully!`);
+      } else {
+        setSuccessMessage("✓ Class added to your routine successfully!");
+      }
+      
       // Reset form to default but preserve day selection for faster multi-entry
       setFormData({ ...makeDefaultForm(), day_of_week: current.day_of_week });
       setSelectedCourseId("");
@@ -287,7 +299,7 @@ export default function RoutineBuilder() {
     } finally {
       setIsSubmitting(false);
     }
-  }, []); // Dependencies empty because we use ref
+  }, [isStudent]); // Dependencies: isStudent is used inside
 
 
   // ── Render ──────────────────────────────────────────────────────────────
