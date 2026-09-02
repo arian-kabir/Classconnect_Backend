@@ -4,17 +4,29 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import useSWR from 'swr';
 import RoutineOrchestrator from '@/components/RoutineOrchestrator';
 import StaffingLedger from '@/components/StaffingLedger';
 import MaterialPipelineBoard from '@/components/MaterialPipelineBoard';
 import AssignmentSubmissionHub from '@/components/dashboard/AssignmentSubmissionHub';
 import CrossFacultyCoordination from '@/components/dashboard/CrossFacultyCoordination';
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat' | 'Module 3'>('Routine');
-  const [showReminder, setShowReminder] = useState(true);
+  const [dismissedReminders, setDismissedReminders] = useState<number[]>([]);
+
+  // Fetch pending assignments and routines to cross-reference enrollments locally (since the mock API doesn't share state)
+  const { data: assignments } = useSWR('/api/assignments', fetcher);
+  const { data: routines } = useSWR('/api/routines', fetcher);
+
+  // Calculate active student section IDs
+  const enrolledSectionIds = Array.isArray(routines) 
+    ? [...new Set(routines.map((r: any) => Number(r.section_id)))]
+    : [];
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -317,28 +329,49 @@ export default function DashboardPage() {
               {/* =========================================================
                   2. REMINDER BOARD BANNER
                   ========================================================= */}
-              {showReminder && (
+              {Array.isArray(assignments) && assignments.filter((a: any) => a.status === 'active' && !dismissedReminders.includes(a.id) && enrolledSectionIds.includes(a.sectionId)).length > 0 && (
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-[#707978] mb-3">
                     Reminder Board
                   </h2>
-                  <div className="bg-[#ebeded] rounded-xl px-5 py-4 flex items-center justify-between border border-[#d9dadb]">
-                    <div className="flex items-center gap-3">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626] flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-bold text-[#191c1d]">CSE471 - section - 1:</span>{' '}
-                        <span className="text-[#404848]">Assignment 2 - pending - last date: 12/7/24 11am</span>
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowReminder(false)}
-                      className="text-[#707978] hover:text-[#191c1d] transition-colors p-1"
-                      aria-label="Dismiss reminder"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                  <div className="flex flex-col gap-2">
+                    {assignments
+                      .filter((a: any) => a.status === 'active' && !dismissedReminders.includes(a.id) && enrolledSectionIds.includes(a.sectionId))
+                      .map((assignment: any) => {
+                        // Find the routine to get course and section details
+                        const routineInfo = Array.isArray(routines) 
+                          ? routines.find((r: any) => Number(r.section_id) === assignment.sectionId)
+                          : null;
+                        
+                        const courseDisplay = routineInfo 
+                          ? `${routineInfo.course_code} - section - ${routineInfo.section_code}` 
+                          : `Section - ${assignment.sectionId}`;
+                          
+                        return (
+                          <div key={assignment.id} className="bg-[#ebeded] rounded-xl px-5 py-4 flex items-center justify-between border border-[#d9dadb]">
+                            <div className="flex items-center gap-3">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626] flex-shrink-0" />
+                              <p className="text-sm">
+                                <span className="font-bold text-[#191c1d]">{courseDisplay}:</span>{' '}
+                                <span className="text-[#404848]">
+                                  {assignment.title} - pending - due: {new Date(assignment.dueDate).toLocaleString('en-US', {
+                                    month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit'
+                                  })}
+                                </span>
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => setDismissedReminders(prev => [...prev, assignment.id])}
+                              className="text-[#707978] hover:text-[#191c1d] transition-colors p-1"
+                              aria-label="Dismiss reminder"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
