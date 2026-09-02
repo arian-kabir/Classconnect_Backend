@@ -229,7 +229,7 @@ export async function POST(req: Request) {
     // Clone all master slots for the student (handles multi-day sections, e.g. Mon + Wed)
     const clonedRoutines: MockRoutineRecord[] = masterSlots.map(master => ({
       ...master,
-      routine_id:    Date.now() + Math.random() as unknown as RoutineEntry['routine_id'],
+      routine_id:    (Date.now() + Math.floor(Math.random() * 1000)) as unknown as RoutineEntry['routine_id'],
       is_owner:      false,
       student_email: userEmail ?? undefined,
     }));
@@ -344,11 +344,11 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const routineIdStr = searchParams.get('routine_id');
 
-  if (!routineIdStr || isNaN(parseInt(routineIdStr, 10))) {
+  if (!routineIdStr || isNaN(Number(routineIdStr))) {
     return NextResponse.json({ error: 'Valid routine_id is required.' }, { status: 400 });
   }
 
-  const routineId = parseInt(routineIdStr, 10);
+  const routineId = Number(routineIdStr);
   const target    = mockRoutines.find(r => Number(r.routine_id) === routineId);
 
   if (!target) {
