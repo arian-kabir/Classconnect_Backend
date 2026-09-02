@@ -3,58 +3,18 @@ import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
 // GET: Get all users a note can be shared with
-export async function GET(request) {
-    try {
-        const { searchParams } = new URL(request.url);
-        const noteId = searchParams.get('noteId');
-        const userId = searchParams.get('userId');
+// When creating a copy of the note, handle missing section_id
+const copyResult = await query(`
+    INSERT INTO notes (title, content, text_content, user_id, section_id)
+    VALUES (?, ?, ?, ?, ?)
+`, [
+    `[Shared] ${note.title}`,
+    JSON.stringify(note.content),
+    note.text_content ? `Shared from ${ownerId}:\n${note.text_content}` : '',
+    sharedUserId,
+    note.section_id || null  // Allow NULL if no section_id
+]);
 
-        if (!noteId || !userId) {
-            return NextResponse.json(
-                { error: 'Note ID and User ID are required' },
-                { status: 400 }
-            );
-        }
-
-        // Simple query without already_shared
-        const users = await query(`
-            SELECT DISTINCT 
-                u.user_id,
-                u.full_name,
-                u.email,
-                u.role,
-                u.profile_picture
-            FROM users u
-            JOIN section_enrollments se ON se.student_id = u.user_id
-            WHERE se.section_id IN (
-                SELECT section_id FROM notes WHERE id = ?
-            )
-            AND u.user_id != ?
-            UNION
-            SELECT DISTINCT 
-                u.user_id,
-                u.full_name,
-                u.email,
-                u.role,
-                u.profile_picture
-            FROM users u
-            JOIN sections s ON s.teacher_id = u.user_id
-            WHERE s.section_id IN (
-                SELECT section_id FROM notes WHERE id = ?
-            )
-            AND u.user_id != ?
-        `, [noteId, userId, noteId, userId]);
-
-        return NextResponse.json({ users });
-
-    } catch (error) {
-        console.error('Error fetching shareable users:', error);
-        return NextResponse.json(
-            { error: error.message, users: [] },
-            { status: 500 }
-        );
-    }
-}
 // POST: Share a note with users
 export async function POST(request) {
     try {
@@ -110,7 +70,7 @@ export async function POST(request) {
                 JSON.stringify(note.content), 
                 note.text_content ? `Shared from ${ownerId}:\n${note.text_content}` : '',
                 sharedUserId,
-                note.section_id
+                note.section_id || null
             ]);
 
             // Send chat notification (optional)

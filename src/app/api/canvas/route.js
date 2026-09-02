@@ -165,7 +165,6 @@ export async function POST(request) {
                 n.content,
                 n.text_content,
                 n.user_id,
-                n.section_id,
                 n.is_archived,
                 n.created_at,
                 n.updated_at
