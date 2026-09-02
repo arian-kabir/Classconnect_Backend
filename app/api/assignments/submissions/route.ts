@@ -48,7 +48,14 @@ export async function POST(req: Request) {
 
     // In a production edge-tech environment, you would stream this file to Google Drive 
     // or AWS S3 via pre-signed URLs or direct stream to avoid memory bloat.
-    // We simulate the processing time here.
+    
+    // For Lamia's M3.6 Audit Guard: Compute cryptographic SHA-256 hash of the submission
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const crypto = await import('crypto');
+    const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    // We simulate the cloud sync processing time here.
     await new Promise(resolve => setTimeout(resolve, 800));
     
     return NextResponse.json({ 
@@ -57,7 +64,9 @@ export async function POST(req: Request) {
       metadata: {
         fileName: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        hash: fileHash,
+        timestamp: new Date().toISOString()
       }
     }, { status: 201 });
 
@@ -77,12 +86,27 @@ export async function GET(req: Request) {
     const role = (session?.user as any)?.role;
     
     // Check if the user is authorized to view submissions
-    // In a real app, students would be filtered to only see their own submissions
-    if (role !== 'teacher' && role !== 'admin' && role !== 'tutor' && role !== 'student') {
+    if (role !== 'teacher' && role !== 'admin' && role !== 'tutor' && role !== 'student_tutor' && role !== 'student') {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // In this mock, we just return empty array, normally we'd filter based on role & assignment ID
+    /**
+     * MICRO-COHERENCE (Phase 1): The Teacher's Visibility
+     * When a teacher queries submissions, the backend performs a JOIN with Arian's `section_enrollments`.
+     * The Teacher must exclusively see submissions from students who enrolled via Shahadat's Routine Builder.
+     * 
+     * PRODUCTION SQL QUERY:
+     * SELECT s.*, u.full_name AS student_name, u.email 
+     * FROM assignment_submissions s
+     * JOIN users u ON s.student_id = u.user_id
+     * JOIN section_enrollments e ON e.student_id = u.user_id
+     * JOIN assignments a ON a.assignment_id = s.assignment_id
+     * WHERE a.assignment_id = ? 
+     *   AND e.section_id = a.section_id 
+     *   AND e.status = 'active';
+     */
+
+    // In this mock, we just return empty array
     return NextResponse.json([]);
   } catch (error) {
     console.error("[GET /api/assignments/submissions] Error:", error);

@@ -388,241 +388,217 @@ export default function RoutineBuilder() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-
-          {/* Full-width Search Bar */}
-          <div className="flex flex-col gap-1.5 mb-4">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
-              Find Course
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by course code or name (e.g., CSE471)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 h-9 text-sm border rounded-md border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white placeholder:text-slate-400 shadow-sm"
-              />
-            </div>
-          </div>
-
-          {/* ── Row 1: Course + Section ──────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Course picker */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="course-select"
-                className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300"
-              >
-                Course <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <Select
-                value={selectedCourseId || undefined}
-                onValueChange={(val) => {
-                  setSelectedCourseId(val ?? "");
-                  // Reset section when course changes
-                  updateField("section_id", "");
-                }}
-                disabled={isLoadingCourses}
-              >
-                <SelectTrigger
-                  id="course-select"
-                  className="w-full border-slate-200 dark:border-slate-800 text-sm"
-                >
-                  <SelectValue
-                    placeholder={isLoadingCourses ? "Loading courses…" : "Select a course…"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.course_id} value={course.course_id.toString()}>
-                      {course.course_code} — {course.course_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Section picker */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="section-select"
-                className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300"
-              >
-                Section <span className="text-red-500" aria-hidden="true">*</span>
-              </label>
-              <Select
-                value={formData.section_id || undefined}
-                onValueChange={(val) => updateField("section_id", val ?? "")}
-                disabled={!selectedCourseId || availableSections.length === 0}
-              >
-                <SelectTrigger
-                  id="section-select"
-                  className="w-full border-slate-200 dark:border-slate-800 text-sm"
-                >
-                  <SelectValue
-                    placeholder={
-                      !selectedCourseId
-                        ? "Select a course first"
-                        : availableSections.length === 0
-                        ? "No sections available"
-                        : "Select a section…"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSections.map((sec) => (
-                    <SelectItem key={sec.section_id} value={sec.section_id.toString()}>
-                      Section {sec.section_code}
-                      {sec.teacher_name ? ` · ${sec.teacher_name}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
-
-          {/* ── Faria M1.1 Timeslot Preview (Students only) ──────────────── */}
-          {isStudent && formData.section_id && (
-            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
-                <p className="text-[11px] font-bold text-blue-800 uppercase tracking-widest">
-                  Class Schedule Preview
+          {/* ── Role Transformation: Teacher Read-Only View ───────────── */}
+          {session?.user?.role === 'teacher' ? (
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-5 space-y-4 text-center mt-4">
+              <CalendarDays className="w-8 h-8 text-indigo-400 mx-auto" />
+              <div>
+                <p className="text-sm font-bold text-indigo-900">Your Assigned Classes</p>
+                <p className="text-xs font-medium text-indigo-700/80 mt-1 max-w-xs mx-auto">
+                  As an instructor, your class schedule is automatically provisioned by the system administrators. 
+                  View your timetable in the Academic Routine below.
                 </p>
-                <span className="ml-auto text-[10px] font-semibold text-blue-400">
-                  Synced from Faria&apos;s M1.1
-                </span>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4" noValidate>
+              {/* Full-width Search Bar */}
+              <div className="flex flex-col gap-1.5 mb-4">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+                  Find Course
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by course code or name (e.g., CSE471)..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 h-9 text-sm border rounded-md border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white placeholder:text-slate-400 shadow-sm"
+                  />
+                </div>
               </div>
 
-              {isPreviewLoading ? (
-                <div className="space-y-2 animate-pulse">
-                  <div className="h-9 bg-blue-100 rounded-lg w-full" />
-                  <div className="h-9 bg-blue-100 rounded-lg w-4/5" />
-                </div>
-              ) : !previewData?.seeded || previewData.slots.length === 0 ? (
-                <p className="text-xs text-blue-600/70 font-medium italic py-2">
-                  No timetable published yet for this section. Your lecturer will seed the schedule before the semester starts.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {previewData.slots.map((slot, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-center gap-3 bg-white/70 border border-blue-100 rounded-lg px-3 py-2.5"
-                    >
-                      <span className="text-[11px] font-extrabold text-blue-700 w-20 shrink-0">
-                        {slot.day_of_week}
-                      </span>
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-slate-700">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
-                      </span>
-                      <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                        <MapPin className="w-2.5 h-2.5" />
-                        {slot.room_number}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* ── Row 2 & 3: Day, Room, and Time (Teachers/Admins only) ───────── */}
-          {!isStudent && (
-            <>
+              {/* ── Row 1: Course + Section ──────────────────────────────── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Course picker */}
                 <div className="space-y-1.5">
-                  <label htmlFor="day-select" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
-                    Day of Week <span className="text-red-500" aria-hidden="true">*</span>
+                  <label htmlFor="course-select" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+                    Course <span className="text-red-500" aria-hidden="true">*</span>
                   </label>
-                  <Select value={formData.day_of_week} onValueChange={(val) => updateField("day_of_week", val as DayOfWeek)}>
-                    <SelectTrigger id="day-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
-                      <SelectValue />
+                  <Select
+                    value={selectedCourseId || undefined}
+                    onValueChange={(val) => {
+                      setSelectedCourseId(val ?? "");
+                      updateField("section_id", "");
+                    }}
+                    disabled={isLoadingCourses}
+                  >
+                    <SelectTrigger id="course-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
+                      <SelectValue placeholder={isLoadingCourses ? "Loading courses…" : "Select a course…"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {DAYS_OF_WEEK.map((day) => (
-                        <SelectItem key={day} value={day}>{day}</SelectItem>
+                      {courses.map((course) => (
+                        <SelectItem key={course.course_id} value={course.course_id.toString()}>
+                          {course.course_code} — {course.course_name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Section picker */}
                 <div className="space-y-1.5">
-                  <label htmlFor="room-input" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
-                    Room Number
-                  </label>
-                  <input
-                    id="room-input"
-                    type="text"
-                    placeholder="e.g. UB2101"
-                    className="w-full h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow placeholder:text-slate-400"
-                    value={formData.room_number}
-                    onChange={(e) => updateField("room_number", e.target.value)}
-                    maxLength={20}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                  Class Time <span className="text-red-500" aria-hidden="true">*</span>
-                </p>
-                
-                <div className="space-y-1.5">
-                  <label htmlFor="time-select" className="sr-only">
-                    Select Time Slot
+                  <label htmlFor="section-select" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+                    Section <span className="text-red-500" aria-hidden="true">*</span>
                   </label>
                   <Select
-                    value={`${formData.start_time}-${formData.end_time}`}
-                    onValueChange={(val) => {
-                      if (!val) return;
-                      const [start, end] = val.split('-');
-                      updateField("start_time", start);
-                      updateField("end_time", end);
-                    }}
+                    value={formData.section_id || undefined}
+                    onValueChange={(val) => updateField("section_id", val ?? "")}
+                    disabled={!selectedCourseId || availableSections.length === 0}
                   >
-                    <SelectTrigger id="time-select" className="w-full border-slate-200 dark:border-slate-800 text-sm bg-white dark:bg-slate-900 font-semibold text-slate-800 dark:text-slate-200">
-                      <SelectValue placeholder="Select official time slot..." />
+                    <SelectTrigger id="section-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
+                      <SelectValue
+                        placeholder={
+                          !selectedCourseId ? "Select a course first"
+                          : availableSections.length === 0 ? "No sections available"
+                          : "Select a section…"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="08:00-09:20">08:00 AM – 09:20 AM</SelectItem>
-                      <SelectItem value="09:30-10:50">09:30 AM – 10:50 AM</SelectItem>
-                      <SelectItem value="11:00-12:20">11:00 AM – 12:20 PM</SelectItem>
-                      <SelectItem value="12:30-13:50">12:30 PM – 01:50 PM</SelectItem>
-                      <SelectItem value="14:00-15:20">02:00 PM – 03:20 PM</SelectItem>
-                      <SelectItem value="15:30-16:50">03:30 PM – 04:50 PM</SelectItem>
+                      {availableSections.map((sec) => (
+                        <SelectItem key={sec.section_id} value={sec.section_id.toString()}>
+                          Section {sec.section_code} {sec.teacher_name ? ` · ${sec.teacher_name}` : ""}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-            </>
+
+              {/* ── Faria M1.1 Timeslot Preview (Students only) ──────────────── */}
+              {isStudent && formData.section_id && (
+                <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
+                    <p className="text-[11px] font-bold text-blue-800 uppercase tracking-widest">Class Schedule Preview</p>
+                    <span className="ml-auto text-[10px] font-semibold text-blue-400">Synced from Faria's M1.1</span>
+                  </div>
+                  {isPreviewLoading ? (
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-9 bg-blue-100 rounded-lg w-full" />
+                      <div className="h-9 bg-blue-100 rounded-lg w-4/5" />
+                    </div>
+                  ) : !previewData?.seeded || previewData.slots.length === 0 ? (
+                    <p className="text-xs text-blue-600/70 font-medium italic py-2">
+                      No timetable published yet for this section. Your lecturer will seed the schedule before the semester starts.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {previewData.slots.map((slot, idx) => (
+                        <li key={idx} className="flex items-center gap-3 bg-white/70 border border-blue-100 rounded-lg px-3 py-2.5">
+                          <span className="text-[11px] font-extrabold text-blue-700 w-20 shrink-0">{slot.day_of_week}</span>
+                          <span className="flex items-center gap-1 text-[11px] font-bold text-slate-700">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                          </span>
+                          <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                            <MapPin className="w-2.5 h-2.5" />
+                            {slot.room_number}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {/* ── Row 2 & 3: Day, Room, and Time (Admins only) ───────── */}
+              {!isStudent && session?.user?.role === 'admin' && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label htmlFor="day-select" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+                        Day of Week <span className="text-red-500" aria-hidden="true">*</span>
+                      </label>
+                      <Select value={formData.day_of_week} onValueChange={(val) => updateField("day_of_week", val as DayOfWeek)}>
+                        <SelectTrigger id="day-select" className="w-full border-slate-200 dark:border-slate-800 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DAYS_OF_WEEK.map((day) => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="room-input" className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300">
+                        Room Number
+                      </label>
+                      <input
+                        id="room-input"
+                        type="text"
+                        placeholder="e.g. UB2101"
+                        className="w-full h-9 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
+                        value={formData.room_number}
+                        onChange={(e) => updateField("room_number", e.target.value)}
+                        maxLength={20}
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                      Class Time <span className="text-red-500" aria-hidden="true">*</span>
+                    </p>
+                    <div className="space-y-1.5">
+                      <label htmlFor="time-select" className="sr-only">Select Time Slot</label>
+                      <Select
+                        value={`${formData.start_time}-${formData.end_time}`}
+                        onValueChange={(val) => {
+                          if (!val) return;
+                          const [start, end] = val.split('-');
+                          updateField("start_time", start);
+                          updateField("end_time", end);
+                        }}
+                      >
+                        <SelectTrigger id="time-select" className="w-full border-slate-200 dark:border-slate-800 text-sm bg-white dark:bg-slate-900 font-semibold text-slate-800 dark:text-slate-200">
+                          <SelectValue placeholder="Select official time slot..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="08:00-09:20">08:00 AM – 09:20 AM</SelectItem>
+                          <SelectItem value="09:30-10:50">09:30 AM – 10:50 AM</SelectItem>
+                          <SelectItem value="11:00-12:20">11:00 AM – 12:20 PM</SelectItem>
+                          <SelectItem value="12:30-13:50">12:30 PM – 01:50 PM</SelectItem>
+                          <SelectItem value="14:00-15:20">02:00 PM – 03:20 PM</SelectItem>
+                          <SelectItem value="15:30-16:50">03:30 PM – 04:50 PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── Submit ──────────────────────────────────────────────── */}
+              <Button
+                type="submit"
+                disabled={
+                  isSubmitting ||
+                  !formData.section_id ||
+                  (!isStudent && session?.user?.role === 'admin' && (!formData.start_time || !formData.end_time || formData.start_time >= formData.end_time))
+                }
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm py-2.5 shadow-sm transition-colors rounded-lg"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Adding to Schedule…
+                  </span>
+                ) : (
+                  "Add to Routine"
+                )}
+              </Button>
+            </form>
           )}
-
-          {/* ── Submit ──────────────────────────────────────────────── */}
-          <Button
-            type="submit"
-            disabled={
-              isSubmitting ||
-              !formData.section_id ||
-              (!isStudent && (!formData.start_time || !formData.end_time || formData.start_time >= formData.end_time))
-            }
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm py-2.5 shadow-sm transition-colors rounded-lg"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Adding to Schedule…
-              </span>
-            ) : (
-              "Add to Routine"
-            )}
-          </Button>
-
-        </form>
       </CardContent>
     </Card>
   );

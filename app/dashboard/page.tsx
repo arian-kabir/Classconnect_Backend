@@ -7,11 +7,13 @@ import Link from 'next/link';
 import RoutineOrchestrator from '@/components/RoutineOrchestrator';
 import StaffingLedger from '@/components/StaffingLedger';
 import MaterialPipelineBoard from '@/components/MaterialPipelineBoard';
+import AssignmentSubmissionHub from '@/components/dashboard/AssignmentSubmissionHub';
+import CrossFacultyCoordination from '@/components/dashboard/CrossFacultyCoordination';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat'>('Routine');
+  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat' | 'Module 3'>('Routine');
   const [showRemainder, setShowRemainder] = useState(true);
 
   useEffect(() => {
@@ -195,6 +197,18 @@ export default function DashboardPage() {
                 Chat
               </button>
 
+              <button
+                onClick={() => setActiveTab('Module 3')}
+                className={`relative py-5 text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'Module 3' ? 'text-indigo-600' : 'text-[#707978] hover:text-indigo-600'
+                }`}
+              >
+                Module 3 Preview
+                {activeTab === 'Module 3' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600" />
+                )}
+              </button>
+
               <Link
                 href="/scheduler"
                 className="text-xs font-bold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors"
@@ -357,6 +371,23 @@ export default function DashboardPage() {
               {activeTab === 'Notes' && (
                 <div className="flex flex-col gap-4">
                   <MaterialPipelineBoard />
+                </div>
+              )}
+
+              {/* =========================================================
+                  MODULE 3 PREVIEW (M3.2 & M3.3)
+                  ========================================================= */}
+              {activeTab === 'Module 3' && (
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#191c1d] tracking-tight">Module 3 Core Hubs</h2>
+                    <p className="text-xs text-[#707978]">Assignment Dropboxes & Faculty Orchestration Rings</p>
+                  </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {/* Injecting them side-by-side for easy verification */}
+                    <AssignmentSubmissionHub sectionId={1} />
+                    <CrossFacultyCoordination courseId={1} />
+                  </div>
                 </div>
               )}
 

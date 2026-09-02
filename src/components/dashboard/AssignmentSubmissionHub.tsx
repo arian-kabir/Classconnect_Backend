@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UploadCloud, Download, CheckCircle, Clock, AlertCircle, FileArchive, Plus, RefreshCw, X } from "lucide-react";
+import { UploadCloud, FileArchive, CheckCircle, Clock, Plus, X, AlertCircle, RefreshCw, Download, Lock } from "lucide-react";
 import type { Assignment, AuditLogEntry } from "@/types/index";
 
 const fetcher = async (url: string) => {
@@ -36,13 +36,23 @@ function SkeletonLoader() {
 
 export default function AssignmentSubmissionHub({ sectionId }: { sectionId: number }) {
   const { data: session } = useSession();
-  const role = session?.user?.role as "student" | "teacher" | "admin" | "tutor" | undefined;
-  
+  const role = (session?.user as any)?.role || "student";
+  const isTutor = role === "tutor" || role === "student_tutor";
+  const isStudent = role === "student";
+
   const { data: assignments, error, mutate, isLoading } = useSWR<Assignment[]>(
-    `/api/assignments?sectionId=${sectionId}`, 
+    `/api/assignments?sectionId=${sectionId}`,
+    fetcher
+  );
+
+  // M1.4 to M3.3 Synchronization: Fetch routines to ensure student is actually enrolled
+  const { data: routines } = useSWR<any[]>(
+    isStudent ? '/api/routines' : null,
     fetcher
   );
   
+  const isEnrolled = !isStudent || routines?.some((r: any) => r.section_id.toString() === sectionId.toString());
+
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeUploadId, setActiveUploadId] = useState<number | null>(null);
@@ -106,18 +116,19 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
         return;
       }
       
+      const responseData = await res.json();
+      
       // INTEGRATION HOOK — Lamia's M3.6 (Academic Assignment Audit Log)
-      // Emit a structured audit event for Lamia's logging infrastructure.
-      // In production: POST to /api/audit with the AuditLogEntry payload.
+      // Emit a structured audit event for Lamia's logging infrastructure using real crypto hash.
       const auditPayload: AuditLogEntry = {
         logId: `${Date.now()}`,
         eventType: 'SUBMISSION_UPLOADED',
         assignmentId,
         sectionId,
         userId: session?.user?.email ?? 'unknown',
-        fileName: file.name,
-        fileHash: `sha256-mock-${file.size}`, // TODO: compute real SHA-256 in production
-        timestamp: new Date().toISOString(),
+        fileName: responseData.metadata.fileName,
+        fileHash: responseData.metadata.hash,
+        timestamp: responseData.metadata.timestamp,
         status: 'success',
       };
       console.log('[AuditLog M3.6] Emission payload:', auditPayload);
@@ -270,7 +281,14 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
 
                   {role === "student" && (
                     <div className="mt-2">
-                      {hasSubmitted ? (
+                      {!isEnrolled ? (
+                        <div className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-amber-200 bg-amber-50 rounded-lg text-center gap-1.5">
+                          <Lock className="w-4 h-4 text-amber-500" />
+                          <span className="text-xs font-semibold text-amber-700 leading-tight">
+                            You must enroll in this section via the Routine Builder to submit assignments.
+                          </span>
+                        </div>
+                      ) : hasSubmitted ? (
                         <div className="flex items-center justify-center w-full h-12 border-2 border-emerald-400 bg-emerald-50 rounded-lg text-emerald-700 font-bold text-xs gap-2">
                           <CheckCircle className="w-4 h-4" /> Submitted ✓
                         </div>
