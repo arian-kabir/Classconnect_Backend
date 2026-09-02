@@ -144,6 +144,31 @@ export interface ChatMessageRow extends RowDataPacket {
   reply_to_message_id: MessageId | null;
 }
 
+export interface FacultyCoordinationRow extends RowDataPacket {
+  meeting_id:    number;
+  course_id:     CourseId;
+  organizer_id:  UserId;
+  agenda:        string;
+  proposed_time: Date;
+}
+
+export interface AssignmentRow extends RowDataPacket {
+  assignment_id: number;
+  section_id:    SectionId;
+  teacher_id:    UserId;
+  title:         string;
+  description:   string | null;
+  due_date:      Date;
+}
+
+export interface AssignmentSubmissionRow extends RowDataPacket {
+  submission_id: number;
+  assignment_id: number;
+  student_id:    UserId;
+  file_url:      string;
+  file_hash:     string;
+}
+
 // ---------------------------------------------------------------------------
 // API Response Shapes (enriched, frontend-facing)
 // ---------------------------------------------------------------------------
