@@ -34,6 +34,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
+import useSWR from 'swr';
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
 } from "@/components/ui/card";
@@ -41,7 +42,8 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Badge }   from "@/components/ui/badge";
+import { CalendarDays, Clock, MapPin } from 'lucide-react';
 import type { CourseWithSections, ConflictDetail, DayOfWeek } from "@/types/index";
 
 // ---------------------------------------------------------------------------
@@ -122,6 +124,31 @@ export default function RoutineBuilder() {
   }, [formData]);
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  /**
+   * INTEGRATION HOOK — Faria's M1.1 (Automated Spreadsheet Intake):
+   * When a student selects a section, this SWR hook fetches the master
+   * timeslots that Faria's script seeded into the `routines` table.
+   * Students see exactly which classes they're about to commit to
+   * before pressing "Add to Routine" — no manual time input needed.
+   *
+   * API: GET /api/routines/preview?section_id=<id>
+   */
+  interface PreviewSlot { day_of_week: string; start_time: string; end_time: string; room_number: string; }
+  const previewKey = isStudent && formData.section_id
+    ? `/api/routines/preview?section_id=${formData.section_id}`
+    : null;
+
+  const previewFetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) return { slots: [], seeded: false };
+    return res.json() as Promise<{ slots: PreviewSlot[]; seeded: boolean }>;
+  };
+
+  const { data: previewData, isLoading: isPreviewLoading } = useSWR(previewKey, previewFetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval:  3000,
+  });
 
     // ── Fetch courses on mount and on search change ────────────────────────
   useEffect(() => {
@@ -455,6 +482,53 @@ export default function RoutineBuilder() {
             </div>
 
           </div>
+
+          {/* ── Faria M1.1 Timeslot Preview (Students only) ──────────────── */}
+          {isStudent && formData.section_id && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
+                <p className="text-[11px] font-bold text-blue-800 uppercase tracking-widest">
+                  Class Schedule Preview
+                </p>
+                <span className="ml-auto text-[10px] font-semibold text-blue-400">
+                  Synced from Faria&apos;s M1.1
+                </span>
+              </div>
+
+              {isPreviewLoading ? (
+                <div className="space-y-2 animate-pulse">
+                  <div className="h-9 bg-blue-100 rounded-lg w-full" />
+                  <div className="h-9 bg-blue-100 rounded-lg w-4/5" />
+                </div>
+              ) : !previewData?.seeded || previewData.slots.length === 0 ? (
+                <p className="text-xs text-blue-600/70 font-medium italic py-2">
+                  No timetable published yet for this section. Your lecturer will seed the schedule before the semester starts.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {previewData.slots.map((slot, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-center gap-3 bg-white/70 border border-blue-100 rounded-lg px-3 py-2.5"
+                    >
+                      <span className="text-[11px] font-extrabold text-blue-700 w-20 shrink-0">
+                        {slot.day_of_week}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-slate-700">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        {slot.start_time.slice(0, 5)} – {slot.end_time.slice(0, 5)}
+                      </span>
+                      <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        <MapPin className="w-2.5 h-2.5" />
+                        {slot.room_number}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* ── Row 2 & 3: Day, Room, and Time (Teachers/Admins only) ───────── */}
           {!isStudent && (
