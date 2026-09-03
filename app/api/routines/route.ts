@@ -33,7 +33,7 @@ export async function GET() {
       FROM routines r
       JOIN sections s ON r.section_id = s.section_id
       JOIN courses c ON s.course_id = c.course_id
-      WHERE r.user_id = ?
+      WHERE s.teacher_id = ?
     `, [userId]);
 
     return NextResponse.json(rows);
