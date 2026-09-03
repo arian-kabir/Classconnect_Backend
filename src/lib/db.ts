@@ -17,6 +17,7 @@ if (process.env.NODE_ENV === 'production') {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+    connectTimeout: 20000, // 20s timeout to survive TiDB Serverless cold starts
   });
 } else {
   if (!global._mysqlPool) {
@@ -30,6 +31,7 @@ if (process.env.NODE_ENV === 'production') {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
+      connectTimeout: 20000, // 20s timeout to survive TiDB Serverless cold starts
     });
   }
   pool = global._mysqlPool;
