@@ -93,7 +93,7 @@ export async function POST(req: Request) {
 
       // Check for duplicate enrollment (now handled by UNIQUE constraint, but we check to give nice error)
       const [existing] = await connection.query<any[]>(
-        'SELECT id FROM section_enrollments WHERE student_id = ? AND section_id = ?',
+        'SELECT 1 FROM section_enrollments WHERE student_id = ? AND section_id = ?',
         [userId, sectionId]
       );
       if (existing.length > 0) {
