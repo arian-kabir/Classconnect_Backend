@@ -35,7 +35,7 @@ export default function RoutineDisplay() {
   });
 
   const error = swrError?.message || null;
-  const displayRoutines = routines || [];
+  const displayRoutines = Array.isArray(routines) ? routines : [];
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // ── Delete handler ──────────────────────────────────────────────────────
