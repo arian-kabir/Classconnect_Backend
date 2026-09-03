@@ -51,9 +51,10 @@
  *   ORDER BY m.uploaded_at DESC;
  */
 
-import { NextResponse }    from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions }      from '../auth/[...nextauth]/route';
+import { authOptions } from '../auth/[...nextauth]/route';
+import { db } from '@/lib/db';
 import type { MaterialItem, MaterialsApiResponse, MaterialCategoryTag } from '@/types/materials';
 
 // ---------------------------------------------------------------------------
@@ -191,8 +192,15 @@ export async function GET(req: Request) {
   if (sectionId) {
     const parsedId = parseInt(sectionId, 10);
     if (!isNaN(parsedId)) {
-      if (role === 'student' && parsedId !== 1 && parsedId !== 3) {
-        return NextResponse.json({ error: "Forbidden: You are not actively enrolled in this section." }, { status: 403 });
+      if (role === 'student') {
+        const userId = Number((session.user as any).id);
+        const [enrollmentRows] = await db.query<any[]>(
+          'SELECT id FROM section_enrollments WHERE student_id = ? AND section_id = ? AND status = "active"',
+          [userId, parsedId]
+        );
+        if (enrollmentRows.length === 0) {
+          return NextResponse.json({ error: "Forbidden: You are not actively enrolled in this section." }, { status: 403 });
+        }
       }
       const section = mockSections.find(s => s.section_id === parsedId);
       const visibleSections = section ? [section] : [];
@@ -208,11 +216,16 @@ export async function GET(req: Request) {
     }
   }
 
-  // For students: the production query would cross-join against routines.user_id.
-  // In mock mode, section_id 1 maps to the enrolled student's routine (see routines mock).
-  const visibleSections = role === 'student'
-    ? mockSections.filter(s => s.section_id === 1 || s.section_id === 3)
-    : mockSections; // Teachers/Admins see all assigned sections
+  let visibleSections = mockSections;
+  if (role === 'student') {
+    const userId = Number((session.user as any).id);
+    const [enrollmentRows] = await db.query<any[]>(
+      'SELECT section_id FROM section_enrollments WHERE student_id = ? AND status = "active"',
+      [userId]
+    );
+    const enrolledIds = enrollmentRows.map(r => r.section_id);
+    visibleSections = mockSections.filter(s => enrolledIds.includes(s.section_id));
+  }
 
   const filtered = visibleSections.map(section => ({
     ...section,
@@ -308,9 +321,12 @@ export async function POST(req: Request) {
 
   // Teacher Content Authority (Phase 3)
   if (role === 'teacher') {
-    const teacherName = session.user?.name;
-    // In mock mode: Dr. Sarah Chen -> Section 1, Grace Hopper -> Section 3
-    if ((sectionId === 1 && teacherName !== 'Dr. Sarah Chen') || (sectionId === 3 && teacherName !== 'Grace Hopper')) {
+    const userId = Number((session.user as any).id);
+    const [assignedSections] = await db.query<any[]>(
+      'SELECT section_id FROM sections WHERE section_id = ? AND teacher_id = ?',
+      [sectionId, userId]
+    );
+    if (assignedSections.length === 0) {
       return NextResponse.json({ error: "Forbidden: You are not officially assigned to this section by the Admin." }, { status: 403 });
     }
   }
