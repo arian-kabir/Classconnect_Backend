@@ -3,7 +3,7 @@ import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export const authOptions: NextAuthOptions = {
   providers: [
