@@ -11,7 +11,7 @@ const ROLE_OPTIONS = [
   { value: 'student_tutor', label: 'Student Tutor' },
 ];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function SignupPage() {
   const router = useRouter();

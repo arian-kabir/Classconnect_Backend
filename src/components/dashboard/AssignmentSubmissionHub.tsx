@@ -202,12 +202,12 @@ export default function AssignmentSubmissionHub({ sectionId }: { sectionId: numb
               </div>
               <div>
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
-                  /**
+                  {/* 
                    * INTEGRATION HOOK — Faria's M3.4 (Contextual Study Scheduler):
                    * When a new assignment dropbox is deployed, the `dueDate` must be forwarded
                    * to Faria's BullMQ job scheduler to fire reminder notifications
                    * 24h and 1h before the deadline. TODO: Emit event to /api/notifications/schedule.
-                   */
+                   */}
                   Submission Deadline
                 </label>
                 <input

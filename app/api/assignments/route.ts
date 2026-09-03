@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { db } from '@/lib/db';
 
 // Establish connection to Redis for BullMQ lazily inside handlers
 // to prevent crashing Next.js build if Redis is not running locally
@@ -76,11 +77,15 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Invalid sectionId parameter" }, { status: 400 });
       }
 
-      // Workspace Key (Phase 3): Enforce strict JOIN validation equivalent
+      // Workspace Key: Enforce strict SQL validation on section_enrollments
       const role = (session?.user as any)?.role || 'student';
       if (role === 'student') {
-        // Mock enrollment: Student is only in section 1 and 3
-        if (parsedId !== 1 && parsedId !== 3) {
+        const userId = Number((session.user as any).id);
+        const [enrollmentRows] = await db.query<any[]>(
+          'SELECT id FROM section_enrollments WHERE student_id = ? AND section_id = ? AND status = "active"',
+          [userId, parsedId]
+        );
+        if (enrollmentRows.length === 0) {
           return NextResponse.json({ error: "Forbidden: You are not actively enrolled in this section." }, { status: 403 });
         }
       }
@@ -91,7 +96,13 @@ export async function GET(req: Request) {
     // If fetching all, filter to enrolled only for students
     const role = (session?.user as any)?.role || 'student';
     if (role === 'student') {
-      return NextResponse.json(mockAssignments.filter(a => a.sectionId === 1 || a.sectionId === 3));
+      const userId = Number((session.user as any).id);
+      const [enrollmentRows] = await db.query<any[]>(
+        'SELECT section_id FROM section_enrollments WHERE student_id = ? AND status = "active"',
+        [userId]
+      );
+      const enrolledIds = enrollmentRows.map(r => r.section_id);
+      return NextResponse.json(mockAssignments.filter(a => enrolledIds.includes(a.sectionId)));
     }
 
     return NextResponse.json(mockAssignments);
@@ -130,11 +141,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Valid ISO dueDate is required" }, { status: 400 });
     }
 
-    // Teacher Content Authority (Phase 3)
+    // Teacher Content Authority
     if (role === 'teacher') {
-      const teacherName = session.user?.name;
-      // In mock mode: Dr. Sarah Chen -> Section 1, Grace Hopper -> Section 3
-      if ((sectionId === 1 && teacherName !== 'Dr. Sarah Chen') || (sectionId === 3 && teacherName !== 'Grace Hopper')) {
+      const userId = Number((session.user as any).id);
+      const [assignedSections] = await db.query<any[]>(
+        'SELECT section_id FROM sections WHERE section_id = ? AND teacher_id = ?',
+        [sectionId, userId]
+      );
+      if (assignedSections.length === 0) {
         return NextResponse.json({ error: "Forbidden: You are not officially assigned to this section by the Admin." }, { status: 403 });
       }
     }

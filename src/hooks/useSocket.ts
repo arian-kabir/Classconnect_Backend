@@ -13,7 +13,7 @@ export function useSocket(userId: number | null) {
   useEffect(() => {
     if (!userId) return;
 
-    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://127.0.0.1:3001', {
+    const socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
       transports: ['websocket'],
     });
 
