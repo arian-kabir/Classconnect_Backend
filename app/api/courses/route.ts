@@ -1,34 +1,7 @@
 import { NextResponse }     from 'next/server';
 import { getServerSession }  from 'next-auth';
 import { authOptions }       from '../auth/[...nextauth]/route';
-
-const ALL_COURSES = [
-  {
-    course_id:   1,
-    course_code: 'CSE471',
-    course_name: 'System Analysis and Design',
-    sections: [
-      { section_id: 1, section_code: '1', semester: 'Summer', year: 2026, teacher_name: 'Dr. Sarah Chen' },
-      { section_id: 2, section_code: '2', semester: 'Summer', year: 2026, teacher_name: 'Prof. Alan Turing' },
-    ],
-  },
-  {
-    course_id:   2,
-    course_code: 'CS101',
-    course_name: 'Introduction to Programming',
-    sections: [
-      { section_id: 3, section_code: '1', semester: 'Summer', year: 2026, teacher_name: 'Grace Hopper' },
-    ],
-  },
-  {
-    course_id:   3,
-    course_code: 'MAT202',
-    course_name: 'Discrete Mathematics',
-    sections: [
-      { section_id: 4, section_code: '1', semester: 'Summer', year: 2026, teacher_name: 'Dr. Ada Lovelace' },
-    ],
-  },
-];
+import { db }                from '@/lib/db';
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -39,34 +12,56 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search')?.toLowerCase().trim() ?? '';
 
-  /**
-   * MICRO-COHERENCE (Phase 1): Provisioning Lockout (M1.1 Coherence)
-   * Students cannot add a section to their routine if Faria's Spreadsheet Intake has not seeded 
-   * the timeslots, or if a Teacher is not allocated. 
-   * 
-   * PRODUCTION SQL QUERY:
-   * SELECT c.course_id, c.course_code, c.course_name, s.section_id, s.section_code, u.full_name AS teacher_name
-   * FROM courses c
-   * JOIN sections s ON c.course_id = s.course_id
-   * JOIN routines r ON r.section_id = s.section_id
-   * LEFT JOIN users u ON s.teacher_id = u.user_id
-   * WHERE s.teacher_id IS NOT NULL 
-   *   AND r.is_owner = TRUE
-   *   AND (c.course_code LIKE ? OR c.course_name LIKE ?);
-   */
+  try {
+    const likeSearch = search ? `%${search}%` : '%';
+    
+    // Fetch courses and their sections from the real database seeded by Faria's module
+    const [rows] = await db.query<any[]>(`
+      SELECT 
+        c.course_id, c.course_code, c.course_name, 
+        s.section_id, s.section_code, s.semester, s.year, 
+        u.full_name AS teacher_name
+      FROM courses c
+      JOIN sections s ON c.course_id = s.course_id
+      LEFT JOIN users u ON s.teacher_id = u.user_id
+      WHERE (c.course_code LIKE ? OR c.course_name LIKE ?)
+    `, [likeSearch, likeSearch]);
 
-  const courses = search
-    ? ALL_COURSES.filter(c =>
-        c.course_code.toLowerCase().includes(search) ||
-        c.course_name.toLowerCase().includes(search)
-      )
-    : ALL_COURSES;
+    // Group sections by course to match the CourseWithSections[] contract
+    const coursesMap = new Map<number, any>();
 
-  // Enforce Provisioning Lockout: filter out sections with no teacher allocated
-  const sanitizedCourses = courses.map(c => ({
-    ...c,
-    sections: c.sections.filter(s => s.teacher_name && s.teacher_name.trim() !== '')
-  })).filter(c => c.sections.length > 0);
+    for (const row of rows) {
+      if (!coursesMap.has(row.course_id)) {
+        coursesMap.set(row.course_id, {
+          course_id: row.course_id,
+          course_code: row.course_code,
+          course_name: row.course_name,
+          sections: [],
+        });
+      }
+      
+      const course = coursesMap.get(row.course_id);
+      course.sections.push({
+        section_id: row.section_id,
+        section_code: row.section_code,
+        semester: row.semester || 'Summer',
+        year: row.year || 2026,
+        teacher_name: row.teacher_name,
+      });
+    }
 
-  return NextResponse.json(sanitizedCourses);
+    const coursesArray = Array.from(coursesMap.values());
+
+    // Enforce Provisioning Lockout: filter out sections with no teacher allocated
+    // (This mimics the frontend requirement where sections without teachers are not selectable)
+    const sanitizedCourses = coursesArray.map(c => ({
+      ...c,
+      sections: c.sections.filter((s: any) => s.teacher_name && s.teacher_name.trim() !== '')
+    })).filter(c => c.sections.length > 0);
+
+    return NextResponse.json(sanitizedCourses);
+  } catch (error: any) {
+    console.error('Courses DB Error:', error);
+    return NextResponse.json({ error: 'Database query failed' }, { status: 500 });
+  }
 }
