@@ -36,6 +36,9 @@ export const authOptions: NextAuthOptions = {
         if (credentials.email === 'teacher@bracu.ac.bd' && credentials.password === 'teacher') {
           return { id: "101", name: "Dr. Sarah Chen", email: credentials.email, role: "teacher" };
         }
+        if (credentials.email === 'prof.davis@university.edu' && credentials.password === 'teacher') {
+          return { id: "8", name: "Prof. James Davis", email: credentials.email, role: "teacher" };
+        }
         if (credentials.email === 'admin@bracu.ac.bd' && credentials.password === 'admin') {
           return { id: "999", name: "Super Admin", email: credentials.email, role: "admin" };
         }
